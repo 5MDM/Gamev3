@@ -1,0 +1,6 @@
+#c {
+    background-color: black;
+    width: var(--w);
+    height: var(--h);
+    touch-action: manipulate;
+}

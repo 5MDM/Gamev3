@@ -1,20 +1,25 @@
 {
-  "name": "Gamev3",
+  "name": "gamev3",
+  "type": "module",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A game me and my friends made",
+  "main": "index.html",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "5MDM",
+  "license": "MIT",
   "dependencies": {
     "preact": "^10.22.0",
     "three": "^0.164.1",
     "typescript": "^5.4.5"
   },
   "devDependencies": {
-    "vite": "^5.2.11"
+    "@types/three": "^0.164.1",
+    "vite": "^5.2.11",
+    "vite-plugin-checker": "^0.6.4"
   }
 }

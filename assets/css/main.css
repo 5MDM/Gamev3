@@ -1,0 +1,29 @@
+* {box-sizing: border-box}
+
+html, body {
+    -webkit-overscroll-behavior: none;
+    overscroll-behavior: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+body {
+    box-sizing: border-box;
+    background-color: gray;
+}
+
+.disable-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.a {
+    color: red;
+}
+
+.b {
+    border: 1px solid green;
+}
