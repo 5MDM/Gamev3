@@ -11,6 +11,7 @@ html, body {
 body {
     box-sizing: border-box;
     background-color: gray;
+    -webkit-touch-callout: none;
 }
 
 .disable-select {
@@ -20,10 +21,3 @@ body {
     user-select: none;
 }
 
-.a {
-    color: red;
-}
-
-.b {
-    border: 1px solid green;
-}

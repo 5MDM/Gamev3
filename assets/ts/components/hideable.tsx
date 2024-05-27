@@ -1,16 +1,16 @@
 import {useImperativeHandle, useState} from "preact/hooks";
 
-export function HideableDiv(props: {[index: string]: any; elType?: string; "data-bind": any, id?: string, class?: string}, ref: any) {
+export function Hideable(props: {[index: string]: any; elType?: string; "data-bind": any}, ref: any) {
     props.elType ||= "flex";
-    const hidden = "display: none";
-    const shown = "display: " + props.elType;
-    const [visible, setVisible] = useState(shown);
-    const el = <div id={props.id} class={props.class} style={visible}>{props.children}</div>;
+    const [visible, setVisible] = useState(true);
+    const el = <>
+        {visible && props.children}
+    </>;
 
     props["data-bind"]({
-        show: () => setVisible(shown),
-        hide: () => setVisible(hidden),
-        toggle: () => (visible == shown) ? setVisible(shown) : setVisible(hidden),
+        show: () => setVisible(true),
+        hide: () => setVisible(false),
+        toggle: () => (visible) ? setVisible(true) : setVisible(false),
     });
 
     return el;

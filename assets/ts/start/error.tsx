@@ -1,13 +1,15 @@
 import {VNode, render} from "preact";
-import {HideableDiv} from "../components/hideable";
+import {Hideable} from "../components/hideable";
 import {$} from "../framework/util";
 
 var el: VNode;
-const errorObj: any = new Promise(res => {
-    el = <HideableDiv data-bind={res} id="error">
-        <h1 id="error-text">Loading...</h1>
-        <p id="error-stack">Loading...</p>
-    </HideableDiv>
+export const errorObj: any = new Promise(res => {
+    el = <Hideable data-bind={res}>
+        <div id="error">
+            <h1 id="error-text">Loading...</h1>
+            <p id="error-stack">Loading...</p>
+        </div>
+    </Hideable>
 
     render(el, $("#error-c"));
 });

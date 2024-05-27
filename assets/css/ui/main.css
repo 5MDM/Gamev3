@@ -1,0 +1,33 @@
+#ui {
+    position: absolute;
+    pointer-events: none;
+    width: var(--w);
+    height: var(--h);
+    margin: auto;
+}
+
+#ui button {
+    pointer-events: auto;
+}
+
+#ui > div {
+    margin: auto;
+    width: var(--w);
+    height: var(--h);
+}
+
+.btn1 button {
+    height: 50px;
+    color: white;
+    background-color: darkblue;
+    border: 3px solid blue;
+    font-size: 1em;
+}
+
+.btn1 button:hover {
+    color: gray;
+}
+
+.btn1 button:active {
+    color: gray;
+}

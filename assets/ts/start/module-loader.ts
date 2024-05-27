@@ -8,10 +8,10 @@
         }
 
         if($("#error-c > #error") == undefined) {
-            alert(err);
+            //alert(err);
             throw(err);
         } else {
-            $("#error-c > #error #error-text").textContent = err.name;
+            $("#error-c > #error #error-text").textContent = err.message;
             $("#error-c > #error #error-stack").textContent = err.stack;
         }
 
