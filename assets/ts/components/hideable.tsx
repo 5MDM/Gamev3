@@ -1,5 +1,11 @@
 import {useImperativeHandle, useState} from "preact/hooks";
 
+export interface VisibilityInterface {
+    show: () => void;
+    hide: () => void;
+    toggle: () => void;
+}
+
 export function Hideable(props: {[index: string]: any; elType?: string; "data-bind": any}, ref: any) {
     props.elType ||= "flex";
     const [visible, setVisible] = useState(true);

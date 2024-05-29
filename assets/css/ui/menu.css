@@ -1,0 +1,12 @@
+#ui > #menu {position: relative}
+
+#ui > #menu #title-screen-img {
+    display: block;
+    height: var(--h);
+}
+
+#ui > #menu #overlay {
+    position: absolute;
+    top: 0;
+    margin-left: 25%;
+}

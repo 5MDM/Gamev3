@@ -1,0 +1,31 @@
+@keyframes btn-anim1 {
+    0% {
+        opacity: 100%;
+    }
+    20% {
+        opacity: 100%;
+        filter: contrast(50%);
+    }
+    30% {
+        opacity: 100%;
+        filter: contrast(100%);
+    }
+    40% {
+        filter: contrast(50%);
+        opacity: 80%;
+    }
+    50% {
+        filter: contrast(0%);
+    }
+    60% {
+        filter: contrast(50%);
+        opacity: 60%;
+    }
+    80% {
+        filter: contrast(100%);
+        opacity: 20%;
+    }
+    100% {
+        opacity: 0%;
+    }
+}

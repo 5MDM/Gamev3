@@ -3,4 +3,5 @@
     width: var(--w);
     height: var(--h);
     touch-action: manipulate;
+    z-index: -2;
 }
