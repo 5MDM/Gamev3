@@ -1,4 +1,4 @@
-export const UTIL_VERSION: number = 1.1;
+export const UTIL_VERSION: number = 1.2;
 
 export const RADIAN_QUARTER = 28.6479;
 
@@ -36,7 +36,7 @@ export function $$
 
   if(!opts) return el;
 
-  if(opts.text) el.innerText = opts.text;
+  if(opts.text) el.textContent = opts.text;
 
   if(opts.children) 
     for(const i of opts.children)
@@ -57,4 +57,36 @@ export function $$
       el.style.setProperty(name, opts.style[name]);
 
   return el;
+}
+
+
+export interface HideableInterface {
+  el: Element;
+  show: () => void;
+  hide: () => void;
+  toggle: () => void;
+}
+
+export function hideable(el: HTMLElement, type?: string): HideableInterface {
+  type ||= "flex";
+  return {
+    el,
+    show() {
+      el.style.display = type;
+    },
+    hide() {
+      el.style.display = "none";
+    },
+    toggle() {
+      if(el.style.display == "none") {
+        el.style.display = type;
+      } else {
+        el.style.display = "none";
+      }
+    }
+  };
+}
+
+export function getRandom(array: any[]): any {
+  return array[Math.floor(Math.random() * array.length)];
 }

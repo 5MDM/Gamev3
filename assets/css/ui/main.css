@@ -11,6 +11,7 @@
 }
 
 #ui > div {
+    position: absolute;
     margin: auto;
     width: var(--w);
     height: var(--h);

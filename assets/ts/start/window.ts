@@ -34,6 +34,7 @@ interface GameStateInterface {
   };
   useFullScreen: boolean;
   renderDistance: number;
+  devMode: boolean;
 }
 
 export const gameState: GameStateInterface = {
@@ -50,9 +51,8 @@ export const gameState: GameStateInterface = {
   },
   useFullScreen: !isiOSDevice(),
   renderDistance: 2,
+  devMode: true,
 };
-
-import.meta.glob<{ default: string }>("../images/**");
 
 // disable this for the console to work
 export function windowTouchendListener(e: any): void {

@@ -12,6 +12,18 @@
     width: min(90vw, 600px);
 }
 
+.full-width {
+    width: 100vw;
+}
+
 .auto-margin {
     margin: auto;
+}
+
+.margin-25 {
+    margin-left: 25%;
+}
+
+.isAbsolute {
+    position: absolute;
 }

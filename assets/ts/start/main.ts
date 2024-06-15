@@ -1,5 +1,5 @@
 import {$} from "../framework/util";
-import {errorObj} from "./error";
+//import {errorObj} from "./error";
 import "./window";
 
 type imgPromiseArr = [string, (() => Promise<{default: string}>)];
@@ -25,16 +25,21 @@ export const images: {
     }
 })();
 
-await errorObj;
+//import "../game/main";
+
 try {
     await import("../game/main");
 } catch(err) {
     if(!(err instanceof Error)) {
         //alert(err);
+        alert(err)
+        throw err;
+    } else {
+        //alert(err);
         throw err;
     }
-
+    /*
     $("#error-c #error-text").textContent = err.message;
     $("#error-c #error-stack").textContent = err.stack || "stack is undefined";
-    (await errorObj).show();
+    errorObj.show();*/
 }

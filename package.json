@@ -13,7 +13,6 @@
   "author": "5MDM",
   "license": "MIT",
   "dependencies": {
-    "preact": "^10.22.0",
     "three": "^0.164.1",
     "typescript": "^5.4.5"
   },
