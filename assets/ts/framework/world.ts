@@ -38,9 +38,9 @@ export class World {
         +   `Instead got "${r}"`
         );
 
-        for (let dx = -r; dx <= r; dx++) {
-            for (let dy = -r; dy <= r; dy++) {
-                for (let dz = -r; dz <= r; dz++) {
+        for(let dx = -r; dx <= r; dx++) {
+            for(let dy = -r; dy <= r; dy++) {
+                for(let dz = -r; dz <= r; dz++) {
                     // Calculate the actual distance from the center
                     const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
@@ -59,18 +59,18 @@ export class World {
     }
 
     generatePhysicsWithinRadius(pos: Vector3, r: number) {
-
+        this.#executeInRadius(pos, r, this.generatePhysics);
     }
 
     generateChunksWithinRadius(pos: Vector3, r: number) {
+        this.#executeInRadius(pos, r, this.generateChunk);
+    }
+
+    generatePhysics(pos: Vector3) {
 
     }
 
-    generatePhysics() {
-
-    }
-
-    generateChunk() {
-
+    generateChunk(pos: Vector3) {
+        
     }
 }
