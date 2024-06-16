@@ -55,7 +55,7 @@ export class AtlasGenerator {
         );
 
         for(const block of this.textures) 
-            this.generateUVMap(block, o.size);
+            this.#generateUVMap(block, o.size);
           
         return {
             canvas: this.c,
@@ -67,7 +67,7 @@ export class AtlasGenerator {
     #currentX = 0;
     #currentY = 0;
 
-    generateUVMap({name, texture}: {name: string; texture: string}, size: number) {
+    #generateUVMap({name, texture}: {name: string; texture: string}, size: number) {
         if(typeof texture == "string") {
             this.#generateUVSide(name, texture, size);
         } else {

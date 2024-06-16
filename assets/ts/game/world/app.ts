@@ -12,8 +12,8 @@ if(!gameState.devMode) app.debug.checkShaderErrors = false;
 
 app.shadowMap.autoUpdate = false;
 
-var currentScene: Scene;
-var currentCamera: Camera;
+export var currentScene: Scene;
+export var currentCamera: Camera;
 
 export function setScene(e: Scene) {
     currentScene = e;
