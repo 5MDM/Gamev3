@@ -1,11 +1,15 @@
 import { Octree } from "./octree";
-import { Group, Material, Mesh } from "three";
+import { Group, Material, Mesh, Vector3 } from "three";
 import { currentScene } from "../game/world/app";
 
 export class Chunk {
-    octree: Octree = new Octree();
+    octree: Octree;
     group: Group = new Group();
 
+    constructor(chunkPos: Vector3, CHUNK_SIZE: number) {
+        this.octree = new Octree(chunkPos, CHUNK_SIZE);
+    }
+    
     delete() {
         this.octree.delete();
         for(const mesh of this.group.children) {
@@ -36,6 +40,8 @@ export class Chunk {
                     "chunk.ts: Mesh doesn't have material to delete"
                 );
             }
+
+            mesh.clear();
         }
         this.group.clear();
     }
