@@ -2,12 +2,23 @@ import { Octree } from "./octree";
 import { Group, Material, Mesh, Vector3 } from "three";
 import { currentScene } from "../game/world/app";
 
+export interface ChunkOpts {
+    chunkPos: Vector3;
+    CHUNK_SIZE: number;
+}
+
 export class Chunk {
     octree: Octree;
     group: Group = new Group();
+    hasPhysics: boolean = false;
 
-    constructor(chunkPos: Vector3, CHUNK_SIZE: number) {
-        this.octree = new Octree(chunkPos, CHUNK_SIZE);
+    constructor(o: ChunkOpts) {
+        this.octree = new Octree(o.chunkPos, o.CHUNK_SIZE);
+    }
+
+    loadPhysics() {
+        if(this.hasPhysics) return;
+        this.hasPhysics = true;
     }
     
     delete() {
@@ -28,7 +39,7 @@ export class Chunk {
                 );
             }
 
-            if(mesh.material) {
+            /*if(mesh.material) {
                 if(!(mesh.material instanceof Material)) throw new Error(
                     "chunk.ts: Mesh's material property isn't instance of material. "
                 +   `Instead, it's a type of "${typeof mesh.material}"`
@@ -39,7 +50,7 @@ export class Chunk {
                 throw new Error(
                     "chunk.ts: Mesh doesn't have material to delete"
                 );
-            }
+            }*/
 
             mesh.clear();
         }

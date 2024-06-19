@@ -28,8 +28,8 @@ export class AtlasGenerator {
         );
     }
 
-    setTextureObj(o: TextureObj): this {
-        this.textures = o;
+    setTextureObj(o: {default: TextureObj}): this {
+        this.textures = o.default;
         return this;
     }
 
@@ -53,7 +53,7 @@ export class AtlasGenerator {
             "height",
             height.toString(),
         );
-
+        
         for(const block of this.textures) 
             this.#generateUVMap(block, o.size);
           

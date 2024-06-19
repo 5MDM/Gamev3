@@ -4,6 +4,7 @@ import { Group } from "three/examples/jsm/libs/tween.module.js";
 import { Octree } from "./octree";
 import { OctreeHelper } from "three/examples/jsm/Addons.js";
 import {Chunk} from "./chunk";
+import { initMaterial } from "./block";
 
 export function executeInRadius(pos: Vector3, r: number, f: (pos: Vector3) => void) {
     if(r <= 0) throw new Error(
@@ -46,7 +47,7 @@ export class World {
     textureAtlas: Texture;
     tileWidthRatio: number;
     tileHeightRatio: number;
-    map: Map3D<Chunk> = new Map3D();
+    chunkMap: Map3D<Chunk> = new Map3D();
 
     constructor(opts: WorldOpts) {
         this.CHUNK_SIZE = opts.CHUNK_SIZE;
@@ -54,6 +55,7 @@ export class World {
         this.tileWidthRatio = opts.uv.size / opts.uv.imageWidth;
         this.tileHeightRatio = opts.uv.size / opts.uv.imageHeight;
         this.scene = opts.scene;
+        initMaterial(this.textureAtlas);
 
         //this.scene.add(new AmbientLight(0x404040, 50));
 
@@ -65,20 +67,32 @@ export class World {
     generatePhysicsWithinRadius(pos: Vector3, r: number) {
         pos.divideScalar(this.CHUNK_SIZE);
         pos.floor();
-        executeInRadius(pos, r, this.generatePhysics);
+        executeInRadius(pos, r, newPos => this.generatePhysics(newPos));
     }
 
     generateChunksWithinRadius(pos: Vector3, r: number) {
         pos.divideScalar(this.CHUNK_SIZE);
         pos.floor();
-        executeInRadius(pos, r, this.generateChunk);
+        executeInRadius(pos, r, newPos => this.generateChunk(newPos));
     }
 
     generatePhysics(chunkPos: Vector3) {
+        const chunk = this.chunkMap.get(chunkPos);
+        if(chunk == undefined) throw new Error(
+            "world.ts: chunk wasn't loaded"
+        );
 
+        chunk.loadPhysics();
     }
 
     generateChunk(chunkPos: Vector3) {
-        
+        if(this.chunkMap.get(chunkPos) != undefined) return;
+
+        const chunk = new Chunk({
+            chunkPos, 
+            CHUNK_SIZE: this.CHUNK_SIZE,
+        });
+
+        this.chunkMap.set(chunkPos, chunk);
     }
 }

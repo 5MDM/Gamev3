@@ -5,7 +5,7 @@ import { startGame } from "../world/main";
 
 function start() {
     menu.hide();
-    startGame;
+    startGame();
 }
 
 const credits = hideable($$("div", {
