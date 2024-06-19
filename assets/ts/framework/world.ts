@@ -14,7 +14,6 @@ export function executeInRadius(pos: Vector3, r: number, f: (pos: Vector3) => vo
     for(let dx = -r; dx <= r; dx++) {
         for(let dy = -r; dy <= r; dy++) {
             for(let dz = -r; dz <= r; dz++) {
-                // Calculate the actual distance from the center
                 const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
                 if(distance <= r) {
@@ -22,7 +21,6 @@ export function executeInRadius(pos: Vector3, r: number, f: (pos: Vector3) => vo
                     const actualY = pos.y + dy;
                     const actualZ = pos.z + dz;
 
-                    // Call the callback function with the calculated coordinates
                     f(new Vector3(actualX, actualY, actualZ));
                 }
             }
@@ -57,7 +55,7 @@ export class World {
         this.tileHeightRatio = opts.uv.size / opts.uv.imageHeight;
         this.scene = opts.scene;
 
-        this.scene.add(new AmbientLight(0x404040, 50));
+        //this.scene.add(new AmbientLight(0x404040, 50));
 
         this.textureAtlas.magFilter = NearestFilter;
         this.textureAtlas.minFilter = NearestMipmapNearestFilter;
