@@ -13,6 +13,7 @@
   "author": "5MDM",
   "license": "MIT",
   "dependencies": {
+    "simplex-noise": "^4.0.1",
     "three": "^0.164.1",
     "typescript": "^5.4.5"
   },

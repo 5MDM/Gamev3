@@ -34,11 +34,5 @@ export function startGame() {
     });
 
     world.generateChunksWithinRadius(new Vector3(0, 0, 0), 1);
-
-    const e = new Mesh(
-        new BoxGeometry(1, 1, 1),
-        new MeshBasicMaterial({color: 0xfffa00}),
-    );
-    scene.add(e);
     renderLoop();
 }

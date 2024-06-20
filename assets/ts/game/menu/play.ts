@@ -21,7 +21,7 @@ const credits = hideable($$("div", {
             style: {
                 "background-color": "white"
             },
-            text: "Made by 5mdm",
+            text: "Made by 5mdm. Keyboard support and code help from DeltAndy",
         }),
     ],
 }));

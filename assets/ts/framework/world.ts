@@ -1,6 +1,5 @@
 import { Texture, Scene, AmbientLight, NearestFilter, NearestMipmapNearestFilter, Vector2, Vector3 } from "three";
 import {Map3D} from "./map";
-import { Group } from "three/examples/jsm/libs/tween.module.js";
 import { Octree } from "./octree";
 import { OctreeHelper } from "three/examples/jsm/Addons.js";
 import {Chunk} from "./chunk";
@@ -44,24 +43,22 @@ interface WorldOpts {
 export class World {
     scene: Scene;
     CHUNK_SIZE: number;
-    textureAtlas: Texture;
     tileWidthRatio: number;
     tileHeightRatio: number;
     chunkMap: Map3D<Chunk> = new Map3D();
 
     constructor(opts: WorldOpts) {
         this.CHUNK_SIZE = opts.CHUNK_SIZE;
-        this.textureAtlas = opts.textureAtlas;
         this.tileWidthRatio = opts.uv.size / opts.uv.imageWidth;
         this.tileHeightRatio = opts.uv.size / opts.uv.imageHeight;
         this.scene = opts.scene;
-        initMaterial(this.textureAtlas);
 
         //this.scene.add(new AmbientLight(0x404040, 50));
 
-        this.textureAtlas.magFilter = NearestFilter;
-        this.textureAtlas.minFilter = NearestMipmapNearestFilter;
-        this.textureAtlas.generateMipmaps = false;
+        opts.textureAtlas.magFilter = NearestFilter;
+        opts.textureAtlas.minFilter = NearestMipmapNearestFilter;
+        opts.textureAtlas.generateMipmaps = false;
+        initMaterial(opts.textureAtlas);
     }
 
     generatePhysicsWithinRadius(pos: Vector3, r: number) {
@@ -89,6 +86,7 @@ export class World {
         if(this.chunkMap.get(chunkPos) != undefined) return;
 
         const chunk = new Chunk({
+            seed: 0,
             chunkPos, 
             CHUNK_SIZE: this.CHUNK_SIZE,
         });

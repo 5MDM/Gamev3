@@ -77,7 +77,6 @@ export const faces: VoxelFaceArray[] = [
 export interface BlockOpts {
     BLOCK_SIZE: number;
     pos: Vector3;
-    atlas: Texture;
 }
 
 var material: MeshBasicMaterial;
@@ -89,7 +88,7 @@ export function initMaterial(atlas: Texture) {
     });
 }
 
-const baseBeometry = new BoxGeometry();
+const baseBeometry = new BoxGeometry(1, 1, 1);
 
 export class Block {
     isCombined: boolean = false;
@@ -98,6 +97,7 @@ export class Block {
         if (material == undefined) throw new Error(
             "block.ts: material and atlas wasn't initiated"
         );
+        
         const geometry = baseBeometry.clone();
 
         this.mesh = new Mesh(
