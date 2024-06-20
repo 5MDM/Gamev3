@@ -90,3 +90,7 @@ export function hideable(el: HTMLElement, type?: string): HideableInterface {
 export function getRandom(array: any[]): any {
   return array[Math.floor(Math.random() * array.length)];
 }
+
+export function clamp(min: number, num: number, max: number): number {
+  return Math.min(Math.max(num, min), max);
+}

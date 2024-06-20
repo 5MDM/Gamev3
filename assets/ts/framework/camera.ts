@@ -1,11 +1,12 @@
-import { PerspectiveCamera } from "three";
-
+import { PerspectiveCamera, Quaternion, Vector3 } from "three";
 
 function NOOP() {}
 
 export interface ControlCameraOpts {
     threeCamera: PerspectiveCamera;
     canvas: HTMLCanvasElement;
+    defaultXRotation: number;
+    defaultYRotation: number;
 }
 
 interface TouchInterface {
@@ -18,6 +19,8 @@ interface TouchInterface {
 }
 
 export class ControlCamera {
+    rx: number;
+    ry: number;
     threeCamera: PerspectiveCamera;
     canPan: boolean = true;
     c: HTMLCanvasElement;
@@ -38,7 +41,10 @@ export class ControlCamera {
     constructor(opts: ControlCameraOpts) {
         this.threeCamera = opts.threeCamera;
         this.c = opts.canvas;
+        this.rx = opts.defaultXRotation;
+        this.ry = opts.defaultYRotation;
         this.#addListeners();
+        this.updateCamera();
     }
 
     #addListeners(): void {
@@ -84,5 +90,18 @@ export class ControlCamera {
             this.canPan = false;
             this.onPointerUnlock();
         });
+    }
+
+    updateCamera() {
+        const xRot = new Quaternion();
+        xRot.setFromAxisAngle(new Vector3(0, 1, 0), this.rx);
+
+        const zRot = new Quaternion()
+        zRot.setFromAxisAngle(new Vector3(1, 0, 0), this.ry);
+
+        const fullRot = new Quaternion();
+        fullRot.multiply(xRot);
+        fullRot.multiply(zRot);
+        this.threeCamera.quaternion.copy(fullRot);
     }
 }
