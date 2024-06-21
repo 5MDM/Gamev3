@@ -23,7 +23,7 @@ export function startGame() {
     canvasTexture.colorSpace = SRGBColorSpace;
 
     const world = new World({
-        CHUNK_SIZE: 16,
+        CHUNK_SIZE: 8,
         scene,
         textureAtlas: canvasTexture,
         uv: {
@@ -33,20 +33,6 @@ export function startGame() {
         },
     });
 
-    const g = new BoxGeometry(1, 1, 1);
-    function bl() {
-        const m = new Mesh(
-            g,
-            new MeshBasicMaterial({color: 0xffffff * Math.random()})
-        );
-        m.position.y = Math.random() * 10 - 5;
-        m.position.z = Math.random() * 10 - 5;
-        m.position.x = Math.random() * 10 - 5;
-        scene.add(m);
-    }
-    
-    for(let i = 0; i != 100; i++) bl();
-
-    world.generateChunksWithinRadius(new Vector3(0, 0, 0), 1);
+    world.generateChunk(new Vector3(0, 0, 0));  
     renderLoop();
 }

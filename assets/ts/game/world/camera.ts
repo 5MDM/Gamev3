@@ -4,7 +4,7 @@ import { ControlCamera } from "../../framework/camera";
 import { $, clamp } from "../../framework/util";
 
 export const camera = new PerspectiveCamera(90, innerWidth / innerHeight);
-camera.position.z = 2;
+camera.position.y = 5;
 setCamera(camera);
 
 const controlCam = new ControlCamera({
@@ -26,8 +26,8 @@ controlCam.onTouchMove = function(x: number, y: number) {
 };
 
 controlCam.onMouseMove = function(e: MouseEvent) {
-    const dx = e.movementX
-    const dy = e.movementY
+    const dx = e.movementX;
+    const dy = e.movementY;
 
     this.rx -= dx * 0.005;
     this.ry = clamp(

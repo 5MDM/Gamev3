@@ -33,7 +33,7 @@ export class Octree {
 	}
 
 	insert(block: Block): boolean {
-		if(!this.bounds.containsBox(block.mesh.geometry.boundingBox!)) return false;
+		if(!this.bounds.containsBox(block.mesh!.geometry.boundingBox!)) return false;
 		if(this.isLeaf) {
 			this.block = block;
 			return true;

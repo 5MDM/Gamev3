@@ -2,7 +2,7 @@ import { Octree } from "./octree";
 import { Group, Material, Mesh, Texture, Vector2, Vector3 } from "three";
 import { currentScene } from "../game/world/app";
 import { createNoise2D } from "simplex-noise";
-import { Block } from "./block";
+import { Block, BlockType } from "./block";
 
 const noise = createNoise2D();
 function getRandomElevation(pos: Vector2): number {
@@ -10,7 +10,7 @@ function getRandomElevation(pos: Vector2): number {
         return noise(pos.x * intensity, pos.y * intensity);
     }
 
-    return smooth(0.01);
+    return smooth(0.5);
 }
 
 export interface ChunkOpts {
@@ -38,6 +38,7 @@ export class Chunk {
             const block = new Block({
                 BLOCK_SIZE: 1,
                 pos: new Vector3(pos.x, elevation, pos.y),
+                type: BlockType.stone,
             });
             return block;
         });
@@ -46,7 +47,8 @@ export class Chunk {
     loopGrid(f: (pos: Vector2) => Block) {
         for(let x = this.chunkPos.x; x != this.chunkPos.x + this.CHUNK_SIZE; x++) {
             for(let z = this.chunkPos.z; z != this.chunkPos.z + this.CHUNK_SIZE; z++) {
-                this.group.add(f(new Vector2(x, z)).mesh);
+                const block: Block = f(new Vector2(x, z));
+                block.addToScene(currentScene);
             }
         }
     }

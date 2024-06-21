@@ -1,4 +1,4 @@
-import { Object3D, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry } from "three";
+import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene } from "three";
 
 export interface VoxelFaceArray {
     uvRow: number;
@@ -77,33 +77,82 @@ export const faces: VoxelFaceArray[] = [
 export interface BlockOpts {
     BLOCK_SIZE: number;
     pos: Vector3;
+    type: BlockType;
 }
 
+interface InitMaterialInterface {
+    tileSize: number;
+    atlas: Texture;
+    tileWidthRatio: number;
+    tileHeightRatio: number;
+}
+
+var tileWidthRatio: number;
+var tileHeightRatio: number;
 var material: MeshBasicMaterial;
-export function initMaterial(atlas: Texture) {
+export function initMaterial(opts: InitMaterialInterface) {
     material = new MeshBasicMaterial({
-        color: 0xfff000,
         fog: false,
-        map: atlas,
+        map: opts.atlas,
     });
+
+    tileWidthRatio = opts.tileWidthRatio;
+    tileHeightRatio = opts.tileHeightRatio;
 }
 
 const baseBeometry = new BoxGeometry(1, 1, 1);
 
+export enum BlockType {
+    stone,
+}
+
 export class Block {
+    type: BlockType;
+    isDeleted: boolean = false;
     isCombined: boolean = false;
-    mesh: Mesh;
+    mesh?: Mesh;
+
     constructor(opts: BlockOpts) {
-        if (material == undefined) throw new Error(
+        if(material == undefined) throw new Error(
             "block.ts: material and atlas wasn't initiated"
         );
-        
+
+        this.type = opts.type;
+
         const geometry = baseBeometry.clone();
+        this.#setGeometry(geometry);
 
         this.mesh = new Mesh(
             geometry,
             material,
         );
+        console.log(opts.pos)
+        this.mesh.position.setY(opts.pos.y)
+        this.mesh.position.setX(Math.random() * 4 - 2)
+        this.mesh.position.setZ(Math.random() * 4 - 2)
         this.mesh.geometry.computeBoundingBox();
+    }
+
+    #setGeometry(g: BoxGeometry) {
+        const uvs: number[] = [];
+
+        for(const {corners, uvRow} of faces)
+            for(const p of corners) 
+                uvs.push(
+                    this.type + p.uv[0] * tileWidthRatio,
+                    1 - (uvRow + 1 - p.uv[1]) * tileHeightRatio,
+                );
+
+        g.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2),);
+    }
+
+    addToScene(scene: Scene) {
+        scene.add(this.mesh!);
+    }
+
+    delete(scene: Scene) {
+        scene.remove(this.mesh!);
+        this.mesh = undefined;
+        this.isDeleted = true;
     }
 }

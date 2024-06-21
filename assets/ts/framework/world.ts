@@ -58,7 +58,12 @@ export class World {
         opts.textureAtlas.magFilter = NearestFilter;
         opts.textureAtlas.minFilter = NearestMipmapNearestFilter;
         opts.textureAtlas.generateMipmaps = false;
-        initMaterial(opts.textureAtlas);
+        initMaterial({
+            atlas: opts.textureAtlas,
+            tileSize: opts.uv.size,
+            tileWidthRatio: this.tileWidthRatio,
+            tileHeightRatio: this.tileHeightRatio,
+        });
     }
 
     generatePhysicsWithinRadius(pos: Vector3, r: number) {
@@ -70,7 +75,9 @@ export class World {
     generateChunksWithinRadius(pos: Vector3, r: number) {
         pos.divideScalar(this.CHUNK_SIZE);
         pos.floor();
-        executeInRadius(pos, r, newPos => this.generateChunk(newPos));
+        executeInRadius(pos, r, newPos => {
+            setTimeout(() => this.generateChunk(newPos), Math.random() * 5000);
+        });
     }
 
     generatePhysics(chunkPos: Vector3) {
