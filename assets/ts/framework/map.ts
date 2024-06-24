@@ -48,4 +48,8 @@ export class Map3D<type> {
 
         return returnObj;   
     }
+
+    destroy(): void {
+        this.#map = {};
+    }
 }

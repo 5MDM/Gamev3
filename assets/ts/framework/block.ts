@@ -1,5 +1,7 @@
 import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene, FrontSide, MeshLambertMaterial, Material } from "three";
 import { currentScene } from "../game/world/app";
+import { Octree } from "./octree";
+import { Map3D } from "./map";
 
 export interface VoxelFaceArray {
     uvRow: number;
@@ -109,7 +111,9 @@ export class Block {
     type: BlockType;
     isDeleted: boolean = false;
     isCombined: boolean = false;
+    isInitialized: boolean = false;
     mesh?: Mesh;
+    #startPos: Vector3;
 
     constructor(opts: BlockOpts) {
         if(material == undefined) throw new Error(
@@ -117,8 +121,9 @@ export class Block {
         );
 
         this.type = opts.type;
+        this.#startPos = opts.pos;
 
-        const geometry = new BufferGeometry();
+        /*const geometry = new BufferGeometry();
         this.#setGeometry(geometry, opts.pos);
 
         geometry.computeVertexNormals();
@@ -128,10 +133,22 @@ export class Block {
             material,
         );
         this.mesh.position.copy(opts.pos);
+        this.mesh.geometry.computeBoundingBox();*/
+    }
+
+    init(map: Map3D<BlockType>) {
+        this.isInitialized = true;
+
+        const geometry = new BufferGeometry();
+        this.#setGeometry(geometry, this.#startPos, map);
+        geometry.computeVertexNormals();
+
+        this.mesh = new Mesh(geometry, material);
+        this.mesh.position.copy(this.#startPos);
         this.mesh.geometry.computeBoundingBox();
     }
 
-    #setGeometry(g: BufferGeometry, pos: Vector3): void {
+    #setGeometry(g: BufferGeometry, pos: Vector3, map: Map3D<BlockType>): void {
         const uvs: number[] = [];
         const normals: number[] = [];
         const indexes: number[] = [];
@@ -169,6 +186,14 @@ export class Block {
           }*/
         const size = 1;
         for (const { corners, uvRow, dir } of faces) {
+            const neighbor = map.get(new Vector3(
+                pos.x + dir[0],
+                pos.y + dir[1],
+                pos.z + dir[2],
+            ));
+            
+            if(neighbor != undefined) continue;
+
             const ndx = positions.length / 3;
             for (const p of corners) {
                 positions.push(
@@ -178,7 +203,7 @@ export class Block {
                 );
 
                 uvs.push(
-                    this.type + p.uv[0] * tileWidthRatio,
+                    (this.type + p.uv[0]) * tileWidthRatio,
                     1 - (uvRow + 1 - p.uv[1]) * tileHeightRatio,
                 );
 

@@ -3,6 +3,7 @@ import { Group, Material, Mesh, Texture, Vector2, Vector3 } from "three";
 import { currentScene } from "../game/world/app";
 import { createNoise2D } from "simplex-noise";
 import { Block, BlockType } from "./block";
+import { Map3D } from "./map";
 
 const noise = createNoise2D();
 function getRandomElevation(pos: Vector2): number {
@@ -10,7 +11,7 @@ function getRandomElevation(pos: Vector2): number {
         return noise(pos.x * intensity, pos.y * intensity);
     }
 
-    return Math.floor(smooth(0.05) * 10) / 10 + 1;
+    return Math.floor(smooth(0.1) * 2) / 2 + 1;
 }
 
 export interface ChunkOpts {
@@ -22,10 +23,11 @@ export interface ChunkOpts {
 export class Chunk {
     seed: number;
     octree: Octree;
-    group: Group = new Group();
     hasPhysics: boolean = false;
     chunkPos: Vector3;
     CHUNK_SIZE: number;
+    map: Map3D<BlockType> = new Map3D();
+    blockList: Block[] = [];
 
     constructor(o: ChunkOpts) {
         this.seed = o.seed;
@@ -35,15 +37,24 @@ export class Chunk {
 
         this.loopGrid(pos => {
             const elevation = getRandomElevation(pos);
+            const type = Math.floor(Math.random() * 2);
+            const newPos = new Vector3(pos.x, o.chunkPos.y * this.CHUNK_SIZE + elevation, pos.y);
             const block = new Block({
-                pos: new Vector3(pos.x, elevation, pos.y),
-                type: Math.round(Math.random() * 2),
+                pos: newPos,
+                type,
             });
-
-            block.addToScene(currentScene);
+            this.map.set(newPos, type);
+            this.blockList.push(block);
+            //block.init(this.map);
+            //block.addToScene(currentScene);
 
             return block;
         });
+
+        for(const block of this.blockList) {
+            block.init(this.map);
+            block.addToScene(currentScene);
+        }
     }
 
     loopGrid(f: (pos: Vector2) => Block) {
@@ -63,7 +74,8 @@ export class Chunk {
     
     delete() {
         this.octree.delete();
-        for(const mesh of this.group.children) {
+        this.map.destroy();
+        for(const {mesh} of this.blockList) {
             if(!(mesh instanceof Mesh)) throw new Error(
                 "chunk.ts: Group children isn't of type \"Mesh\". Instead got type of "
             +   `"${typeof mesh}"`
@@ -94,6 +106,5 @@ export class Chunk {
 
             mesh.clear();
         }
-        this.group.clear();
     }
 }

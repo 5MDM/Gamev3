@@ -11,9 +11,9 @@ export function executeInRadius(pos: Vector3, r: number, f: (pos: Vector3) => vo
     +   `Instead got "${r}"`
     );
 
-    for(let dx = -r; dx <= r; dx++) {
-        for(let dy = -r; dy <= r; dy++) {
-            for(let dz = -r; dz <= r; dz++) {
+    for(let dx = -r; dx < r; dx++) {
+        for(let dy = -r; dy < r; dy++) {
+            for(let dz = -r; dz < r; dz++) {
                 const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
                 if(distance <= r) {
@@ -76,7 +76,7 @@ export class World {
         pos.divideScalar(this.CHUNK_SIZE);
         pos.floor();
         executeInRadius(pos, r, newPos => {
-            setTimeout(() => this.generateChunk(newPos), Math.random() * 5000);
+            setTimeout(() => this.generateChunk(newPos), Math.round(Math.random() * 10_000));
         });
     }
 

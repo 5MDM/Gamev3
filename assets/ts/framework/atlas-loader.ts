@@ -53,9 +53,13 @@ export class AtlasGenerator {
             "height",
             height.toString(),
         );
-        
+
         for(const block of this.textures) 
             await this.#generateUVMap(block, o.size);
+
+        /*this.c.toBlob(blob => {
+            alert(URL.createObjectURL(blob!));
+        });*/
           
         return {
             canvas: this.c,

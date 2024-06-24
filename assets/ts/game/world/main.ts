@@ -5,6 +5,7 @@ import { renderLoop, setScene } from "./app";
 import { $ } from "../../framework/util";
 import "./camera";
 
+// decrease for pixelation
 const IMAGE_SIZE = 32;
 
 const scene = new Scene();
@@ -44,6 +45,6 @@ export async function startGame() {
     m.position.z = -10;
     scene.add(m);
 
-    world.generateChunksWithinRadius(new Vector3(0, 0, 0), 1);  
+    world.generateChunksWithinRadius(new Vector3(0, 0, 0), 2);  
     renderLoop();
 }
