@@ -27,9 +27,9 @@ export const images: {
 
 //import "../game/main";
 
-try {
+//try {
     await import("../game/main");
-} catch(err) {
+/*} catch(err) {
     if(!(err instanceof Error)) {
         //alert(err);
         alert(err)
@@ -38,8 +38,4 @@ try {
         //alert(err);
         throw err;
     }
-    /*
-    $("#error-c #error-text").textContent = err.message;
-    $("#error-c #error-stack").textContent = err.stack || "stack is undefined";
-    errorObj.show();*/
-}
+}*/

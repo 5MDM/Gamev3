@@ -2,5 +2,9 @@
     {
         "name": "Stone",
         "texture": "stone.png"
+    },
+    {
+        "name": "Grass",
+        "texture": "grass.png"
     }
 ]

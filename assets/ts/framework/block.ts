@@ -1,4 +1,5 @@
-import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene } from "three";
+import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene, FrontSide, MeshLambertMaterial, Material } from "three";
+import { currentScene } from "../game/world/app";
 
 export interface VoxelFaceArray {
     uvRow: number;
@@ -75,7 +76,6 @@ export const faces: VoxelFaceArray[] = [
 ];
 
 export interface BlockOpts {
-    BLOCK_SIZE: number;
     pos: Vector3;
     type: BlockType;
 }
@@ -89,10 +89,10 @@ interface InitMaterialInterface {
 
 var tileWidthRatio: number;
 var tileHeightRatio: number;
-var material: MeshBasicMaterial;
+var material: Material;
 export function initMaterial(opts: InitMaterialInterface) {
     material = new MeshBasicMaterial({
-        fog: false,
+        side: FrontSide,
         map: opts.atlas,
     });
 
@@ -100,10 +100,9 @@ export function initMaterial(opts: InitMaterialInterface) {
     tileHeightRatio = opts.tileHeightRatio;
 }
 
-const baseBeometry = new BoxGeometry(1, 1, 1);
-
 export enum BlockType {
     stone,
+    grass,
 }
 
 export class Block {
@@ -119,35 +118,94 @@ export class Block {
 
         this.type = opts.type;
 
-        const geometry = baseBeometry.clone();
-        this.#setGeometry(geometry);
+        const geometry = new BufferGeometry();
+        this.#setGeometry(geometry, opts.pos);
+
+        geometry.computeVertexNormals();
 
         this.mesh = new Mesh(
             geometry,
             material,
         );
-        console.log(opts.pos)
-        this.mesh.position.setY(opts.pos.y)
-        this.mesh.position.setX(Math.random() * 4 - 2)
-        this.mesh.position.setZ(Math.random() * 4 - 2)
+        this.mesh.position.copy(opts.pos);
         this.mesh.geometry.computeBoundingBox();
     }
 
-    #setGeometry(g: BoxGeometry) {
+    #setGeometry(g: BufferGeometry, pos: Vector3): void {
         const uvs: number[] = [];
+        const normals: number[] = [];
+        const indexes: number[] = [];
+        const positions: number[] = [];
 
-        for(const {corners, uvRow} of faces)
-            for(const p of corners) 
+        /*for(const {dir, corners, uvRow} of faces) {
+            const neighbor = this.voxelFaceMap.get(
+              pos.x + dir[0],
+              pos.y + dir[1],
+              pos.z + dir[2],
+            );
+            
+            if(neighbor == undefined) {
+              // make face
+              const ndx = positions.length / 3;
+              for(const p of corners) {
+                positions.push(
+                  p.pos[0] + pos.x, 
+                  p.pos[1] + pos.y,
+                  p.pos[2] + pos.z,
+                );
+                normals.push(...dir);
+                
+                uvs.push(
+                  (uvVoxel + p.uv[0]) * this.tileWidthRatio,
+                  1 - (uvRow + 1 - p.uv[1]) * this.tileHeightRatio,
+                );
+              }
+              
+              indices.push(
+                ndx    , ndx + 1, ndx + 2,
+                ndx + 2, ndx + 1, ndx + 3,
+              );   
+            }
+          }*/
+        const size = 1;
+        for (const { corners, uvRow, dir } of faces) {
+            const ndx = positions.length / 3;
+            for (const p of corners) {
+                positions.push(
+                    p.pos[0] + pos.x + size,
+                    p.pos[1] + pos.y + size,
+                    p.pos[2] + pos.z + size,
+                );
+
                 uvs.push(
                     this.type + p.uv[0] * tileWidthRatio,
                     1 - (uvRow + 1 - p.uv[1]) * tileHeightRatio,
                 );
 
-        g.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2),);
+                normals.push(...dir);
+            }
+
+
+            indexes.push(
+                ndx, ndx + 1, ndx + 2,
+                ndx + 2, ndx + 1, ndx + 3,
+            );
+        }
+
+        g.setAttribute(
+            "position",
+            new BufferAttribute(new Float32Array(positions), 3),
+        );
+        g.setAttribute("normal",
+            new BufferAttribute(new Float32Array(normals), 3),
+        );
+        g.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2));
+        g.setIndex(indexes);
     }
 
     addToScene(scene: Scene) {
-        scene.add(this.mesh!);
+        scene.add(this.mesh!)
+        //setTimeout(() => scene.add(this.mesh!), 500);
     }
 
     delete(scene: Scene) {

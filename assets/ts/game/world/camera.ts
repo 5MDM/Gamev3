@@ -3,8 +3,8 @@ import { setCamera } from "./app";
 import { ControlCamera } from "../../framework/camera";
 import { $, clamp } from "../../framework/util";
 
-export const camera = new PerspectiveCamera(90, innerWidth / innerHeight);
-camera.position.y = 5;
+export const camera = new PerspectiveCamera(90, innerWidth / innerHeight, 0.1, 5 * 1000);
+camera.position.y = 10;
 setCamera(camera);
 
 const controlCam = new ControlCamera({

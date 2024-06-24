@@ -3,7 +3,8 @@
     try {
         await import("./main");
     } catch(err: any) {
-        function $(e: string) {
+        throw err;
+        /*function $(e: string) {
             return <HTMLElement>document.querySelector(e);
         }
 

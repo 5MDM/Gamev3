@@ -53,7 +53,7 @@ export class World {
         this.tileHeightRatio = opts.uv.size / opts.uv.imageHeight;
         this.scene = opts.scene;
 
-        //this.scene.add(new AmbientLight(0x404040, 50));
+        this.scene.add(new AmbientLight(0xffffff, 50));
 
         opts.textureAtlas.magFilter = NearestFilter;
         opts.textureAtlas.minFilter = NearestMipmapNearestFilter;

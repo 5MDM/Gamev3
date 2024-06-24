@@ -10,7 +10,7 @@ function getRandomElevation(pos: Vector2): number {
         return noise(pos.x * intensity, pos.y * intensity);
     }
 
-    return smooth(0.5);
+    return Math.floor(smooth(0.05) * 10) / 10 + 1;
 }
 
 export interface ChunkOpts {
@@ -36,19 +36,22 @@ export class Chunk {
         this.loopGrid(pos => {
             const elevation = getRandomElevation(pos);
             const block = new Block({
-                BLOCK_SIZE: 1,
                 pos: new Vector3(pos.x, elevation, pos.y),
-                type: BlockType.stone,
+                type: Math.round(Math.random() * 2),
             });
+
+            block.addToScene(currentScene);
+
             return block;
         });
     }
 
     loopGrid(f: (pos: Vector2) => Block) {
-        for(let x = this.chunkPos.x; x != this.chunkPos.x + this.CHUNK_SIZE; x++) {
-            for(let z = this.chunkPos.z; z != this.chunkPos.z + this.CHUNK_SIZE; z++) {
-                const block: Block = f(new Vector2(x, z));
-                block.addToScene(currentScene);
+        const step = 0.5;
+        const CHUNK_SIZE_HALF = this.CHUNK_SIZE / 2;
+        for(let x = this.chunkPos.x * this.CHUNK_SIZE; x <= this.chunkPos.x * this.CHUNK_SIZE + this.CHUNK_SIZE; x += step) {
+            for(let z = this.chunkPos.z * this.CHUNK_SIZE; z <= this.chunkPos.z * this.CHUNK_SIZE + this.CHUNK_SIZE; z += step) {
+                const block: Block = f(new Vector2(x - CHUNK_SIZE_HALF, z - CHUNK_SIZE_HALF));
             }
         }
     }

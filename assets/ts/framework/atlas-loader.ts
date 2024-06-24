@@ -33,9 +33,9 @@ export class AtlasGenerator {
         return this;
     }
 
-    generateAtlas(o: {
+    async generateAtlas(o: {
         size: number;
-    }): AtlasGeneratorOutput {
+    }): Promise<AtlasGeneratorOutput> {
         if(this.textures == undefined) throw new Error(
             "atlas-loader.ts: You didn't call "
         + `".setTextureObj(o: TextureObj)"`
@@ -55,7 +55,7 @@ export class AtlasGenerator {
         );
         
         for(const block of this.textures) 
-            this.#generateUVMap(block, o.size);
+            await this.#generateUVMap(block, o.size);
           
         return {
             canvas: this.c,
@@ -67,9 +67,10 @@ export class AtlasGenerator {
     #currentX = 0;
     #currentY = 0;
 
-    #generateUVMap({name, texture}: {name: string; texture: string}, size: number) {
+    #generateUVMap({name, texture}: {name: string; texture: string}, size: number): Promise<void> {
         if(typeof texture == "string") {
-            this.#generateUVSide(name, texture, size);
+            const pr = new Promise<void>(res => this.#generateUVSide(name, texture, size, res));
+            return pr;
         } else {
             throw new Error(
                 "atlas-loader.ts: multiple side support coming soon"
@@ -77,7 +78,7 @@ export class AtlasGenerator {
         }
     }
 
-    #generateUVSide(name: string, texture: string, size: number): void {
+    #generateUVSide(name: string, texture: string, size: number, res: () => void): void {
         const img = new Image();
         const imgURL = images[`blocks/${texture}`];
         const self = this;
@@ -102,6 +103,7 @@ export class AtlasGenerator {
               
             self.#currentY = 0;
             self.#currentX += size;
+            res();
         };
 
         img.onerror = function(e) {            

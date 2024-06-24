@@ -4,3 +4,5 @@
     display: block;
     height: var(--h);
 }
+
+#ui > #loading {color: white}

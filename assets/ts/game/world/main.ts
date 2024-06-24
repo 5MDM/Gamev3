@@ -2,6 +2,7 @@ import { AtlasGenerator, AtlasGeneratorOutput } from "../../framework/atlas-load
 import { BoxGeometry, CanvasTexture, Mesh, MeshBasicMaterial, SRGBColorSpace, Scene, Vector3 } from "three";
 import { World } from "../../framework/world";
 import { renderLoop, setScene } from "./app";
+import { $ } from "../../framework/util";
 import "./camera";
 
 const IMAGE_SIZE = 32;
@@ -14,10 +15,13 @@ const atlasGenerator = new AtlasGenerator();
 
 atlasGenerator.setTextureObj(textureURL);
 
-export function startGame() {
-    const atlas: AtlasGeneratorOutput = atlasGenerator.generateAtlas({
-        size: IMAGE_SIZE,
-    });
+const atlas: AtlasGeneratorOutput = await atlasGenerator.generateAtlas({
+    size: IMAGE_SIZE,
+});
+
+($("#ui > #loading") as HTMLDivElement)!.style.display = "none";
+
+export async function startGame() {
 
     const canvasTexture = new CanvasTexture(atlas.canvas);
     canvasTexture.colorSpace = SRGBColorSpace;
@@ -33,6 +37,13 @@ export function startGame() {
         },
     });
 
-    world.generateChunk(new Vector3(0, 0, 0));  
+    const m = new Mesh(
+        new BoxGeometry(100, 1, 100),
+        new MeshBasicMaterial({color: 0xfff000})
+    );
+    m.position.z = -10;
+    scene.add(m);
+
+    world.generateChunksWithinRadius(new Vector3(0, 0, 0), 1);  
     renderLoop();
 }
