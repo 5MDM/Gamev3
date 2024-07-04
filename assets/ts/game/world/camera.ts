@@ -7,7 +7,7 @@ export const camera = new PerspectiveCamera(90, innerWidth / innerHeight, 0.1, 5
 camera.position.y = 10;
 setCamera(camera);
 
-const controlCam = new ControlCamera({
+export const controlCam = new ControlCamera({
     threeCamera: camera,
     canvas: $("#c") as HTMLCanvasElement,
     defaultXRotation: -1.570796,

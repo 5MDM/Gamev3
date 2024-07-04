@@ -27,6 +27,9 @@ importers:
       vite-plugin-checker:
         specifier: ^0.6.4
         version: 0.6.4(typescript@5.4.5)(vite@5.2.11)
+      vite-plugin-cross-origin-isolation:
+        specifier: ^0.1.6
+        version: 0.1.6
 
 packages:
 
@@ -561,6 +564,9 @@ packages:
       vue-tsc:
         optional: true
 
+  vite-plugin-cross-origin-isolation@0.1.6:
+    resolution: {integrity: sha512-OY0naW9nPUDrKTffYnY7FRYXOgZdHoNwMGpPxUmj/n32mGZi01fcq+J536jkmwGWX7DLT95XBQVHHbrAJzTvrw==}
+
   vite@5.2.11:
     resolution: {integrity: sha512-HndV31LWW05i1BLPMUCE1B9E9GFbOu1MbenhS58FuK6owSO5qHm7GiCotrNY1YE5rMeQSFBGmT5ZaLEjFizgiQ==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -1049,6 +1055,8 @@ snapshots:
       vscode-uri: 3.0.8
     optionalDependencies:
       typescript: 5.4.5
+
+  vite-plugin-cross-origin-isolation@0.1.6: {}
 
   vite@5.2.11:
     dependencies:
