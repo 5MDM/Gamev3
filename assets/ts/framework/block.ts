@@ -2,6 +2,7 @@ import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeom
 import { currentScene } from "../game/world/app";
 import { Octree } from "./octree";
 import { Map3D } from "./map";
+import { GreedyMesh } from "./greedy-mesh";
 
 export interface VoxelFaceArray {
     uvRow: number;
@@ -77,9 +78,16 @@ export const faces: VoxelFaceArray[] = [
     },
 ];
 
+interface GreedyMeshSize {
+    width: number;
+    height: number;
+    depth: number;
+}
+
 export interface BlockOpts {
     pos: Vector3;
     type: BlockType;
+    greedyMesh?: GreedyMeshSize;
 }
 
 interface InitMaterialInterface {
@@ -110,7 +118,8 @@ export enum BlockType {
 export class Block {
     type: BlockType;
     isDeleted: boolean = false;
-    isCombined: boolean = false;
+    isGreedyMeshed: boolean = false;
+    greedyMeshOpts?: GreedyMeshSize;
     isInitialized: boolean = false;
     mesh?: Mesh;
     #startPos: Vector3;
@@ -123,23 +132,18 @@ export class Block {
         this.type = opts.type;
         this.#startPos = opts.pos;
 
-        /*const geometry = new BufferGeometry();
-        this.#setGeometry(geometry, opts.pos);
-
-        geometry.computeVertexNormals();
-
-        this.mesh = new Mesh(
-            geometry,
-            material,
-        );
-        this.mesh.position.copy(opts.pos);
-        this.mesh.geometry.computeBoundingBox();*/
+        if(opts.greedyMesh != undefined) {
+            this.isGreedyMeshed = true;
+            this.greedyMeshOpts = opts.greedyMesh;
+        }
     }
 
     init(map: Map3D<BlockType>) {
         this.isInitialized = true;
 
-        const geometry = new BufferGeometry();
+        const geometry = 
+        new BoxGeometry(this.greedyMeshOpts?.width || 1, this.greedyMeshOpts?.height || 1, this.greedyMeshOpts?.depth || 1);
+
         this.#setGeometry(geometry, this.#startPos, map);
         geometry.computeVertexNormals();
 
@@ -186,20 +190,20 @@ export class Block {
           }*/
         const size = 1;
         for (const { corners, uvRow, dir } of faces) {
-            const neighbor = map.get(new Vector3(
+            /*const neighbor = map.get(new Vector3(
                 pos.x + dir[0],
                 pos.y + dir[1],
                 pos.z + dir[2],
             ));
             
-            if(neighbor != undefined) continue;
+            if(neighbor != undefined) continue;*/
 
             const ndx = positions.length / 3;
             for (const p of corners) {
                 positions.push(
-                    p.pos[0] + pos.x + size,
-                    p.pos[1] + pos.y + size,
-                    p.pos[2] + pos.z + size,
+                    p.pos[0] + pos.x + (this.greedyMeshOpts?.width || size),
+                    p.pos[1] + pos.y + (this.greedyMeshOpts?.height || size),
+                    p.pos[2] + pos.z + (this.greedyMeshOpts?.depth || size),
                 );
 
                 uvs.push(

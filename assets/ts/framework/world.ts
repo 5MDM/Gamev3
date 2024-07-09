@@ -1,33 +1,9 @@
 import { Texture, Scene, AmbientLight, NearestFilter, NearestMipmapNearestFilter, Vector2, Vector3 } from "three";
 import {Map3D} from "./map";
 import { Octree } from "./octree";
-import { OctreeHelper } from "three/examples/jsm/Addons.js";
 import {Chunk} from "./chunk";
 import { initMaterial } from "./block";
-
-export function executeInRadius(pos: Vector3, r: number, f: (pos: Vector3) => void) {
-    if(r <= 0) throw new Error(
-        "world.ts: Radius can't be below a 1. "
-    +   `Instead got "${r}"`
-    );
-
-    for(let dx = -r; dx < r; dx++) {
-        for(let dy = -r; dy < r; dy++) {
-            for(let dz = -r; dz < r; dz++) {
-                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-                if(distance <= r) {
-                    const actualX = pos.x + dx;
-                    const actualY = pos.y + dy;
-                    const actualZ = pos.z + dz;
-
-                    f(new Vector3(actualX, actualY, actualZ));
-                }
-            }
-        }
-    }
-
-}
+import {executeInRadius} from "./map";
 
 interface WorldOpts {
     scene: Scene;

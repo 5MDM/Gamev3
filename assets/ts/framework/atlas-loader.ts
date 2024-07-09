@@ -1,7 +1,6 @@
 import { images } from "../start/main";
 import { $$ } from "./util";
 
-console.log(images);
 const FACES_Y = 3;
 
 export type TextureObj = {
