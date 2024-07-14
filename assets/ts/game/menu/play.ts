@@ -2,6 +2,9 @@ import { $, $$, hideable, HideableInterface } from "../../framework/util";
 import { images } from "../../start/main";
 import { btn } from "../../components/btn";
 import { startGame } from "../world/main";
+import { greedyMeshTest } from "./testing";
+
+const menuDir = $("#ui > #menu");
 
 function start() {
     menu.hide();
@@ -27,7 +30,7 @@ const credits = hideable($$("div", {
 }));
 
 credits.hide();
-$("#ui > #menu").appendChild(credits.el);
+menuDir.appendChild(credits.el);
 
 const menu = hideable($$("div", {
     attrs: {
@@ -41,6 +44,7 @@ const menu = hideable($$("div", {
             children: [
                 btn("Play", () => start()),
                 btn("Credits", () => redir(credits)),
+                btn("Testing", () => redir(testing)),
             ]
         }),
         $$("img", {
@@ -53,10 +57,37 @@ const menu = hideable($$("div", {
     ],
 }));
 
-function redir(obj?: HideableInterface) {
+const testingText = $$("p", {
+    attrs: {
+        class: "full-width",
+    },
+    style: {
+        color: "white",
+    }
+});
+
+const testing = hideable($$("div", {
+    attrs: {
+        class: "btn1 flex-column",
+    },
+    style: {
+        "white-space": "pre-wrap",
+        display: "block",
+    },
+    children: [
+        testingText,
+        btn("Start greedy mesh test", () => greedyMeshTest(testingText)),
+    ],
+}));
+
+testing.hide();
+
+menuDir.appendChild(testing.el);
+
+function redir(obj: HideableInterface) {
     credits.hide();
     menu.hide();
-    obj?.show();
+    obj.show();
 }
 
-$("#ui > #menu").appendChild(menu.el);
+menuDir.appendChild(menu.el);

@@ -70,6 +70,8 @@ export class Chunk {
 
     #initBlocks(block: Box): Block {
         const pos = new Vector3(block.pos.x, block.pos.y, block.pos.z);
+        //pos.add(new Vector3(block.width, block.height, block.depth))
+        //pos.add(this.chunkPos.clone().multiplyScalar(this.CHUNK_SIZE))
         
         if(block.isGreedyMeshed) {
             const voxel = new Block({
@@ -82,14 +84,21 @@ export class Chunk {
                 },
             });
 
-            for(let x = block.pos.x; x < block.width; x += this.step) {
-                for(let y = block.pos.y; y < block.height; y += this.step) {
-                    for(let z = block.pos.z; z < block.depth; z += this.step) {
+            for(let x = block.pos.x; x <= block.pos.x + block.width; x++) {
+                for(let y = block.pos.y; y <= block.pos.y + block.height - 1; y += this.step) {
+                    for(let z = block.pos.z; z <= block.pos.z + block.depth; z++) {
                         const pos = new Vector3(x, y, z);
-                        if(this.map.get(pos) != undefined) throw new Error(
-                            "chunk.ts: "
-                        +   `position (${x}, ${y}, ${z}) already has a block of type "${BlockType[block.type]}"`
-                        );
+
+                        if(pos.x == -2
+                        && pos.y == 0.5
+                        && pos.z == -3) console.log(block);
+
+                        if(this.map.get(pos) != undefined) {
+                            throw new Error(
+                                "chunk.ts: "
+                             +  `position (${x}, ${y}, ${z}) already has a block of type "${BlockType[block.type]}"`
+                            );
+                        }
 
                         this.map.set(pos, block.type);
                     }
@@ -104,6 +113,10 @@ export class Chunk {
                 type: block.type,
             });
 
+            if(this.map.get(pos) != undefined) throw new Error(
+                "chunk.ts: "
+            +   `yk`
+            );
             this.map.set(pos, block.type);
 
             return voxel;
@@ -132,7 +145,7 @@ export class Chunk {
             worker.removeEventListener("message", this.workerListener!);
 
             for(const block of self.blockList) {
-                block.init(self.map);
+                block.init(self.map, true);
                 block.addToScene(currentScene);
             } 
         }

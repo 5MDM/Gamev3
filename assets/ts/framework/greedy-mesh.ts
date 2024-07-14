@@ -1,8 +1,9 @@
 import { WorkerMessageType } from "../game/worker-enum";
+import { Block, BlockType } from "./block";
 import { Map3D, Map2D } from "./map";
 import { Vector2, Vector3 } from "three";
 
-interface MapInterface {
+export interface MapInterface {
     [index: string]: Map3D<boolean>;
 }
 
@@ -13,6 +14,7 @@ export interface GreedyMeshInterface {
     maps: MapInterface;
     minY: number;
     maxY: number;
+    center: boolean;
 }
 
 interface BoundsInterface {
@@ -59,9 +61,9 @@ interface MergeMeshInterface {
 export class GreedyMesh {
     log: (e: any) => void;
 
-    constructor(postMessage: (message: any) => void) {
+    constructor(postMessage?: (message: any) => void) {
         this.log = function(e: any) {
-            postMessage({
+            postMessage?.({
                 type: WorkerMessageType.log,
                 payload: e,
             });
@@ -87,6 +89,14 @@ export class GreedyMesh {
     greedyMesh(o: GreedyMeshInterface): Box[] {
         const bounds: BoundsInterface = this.#calculateXZBounds(o.chunkPos, o.CHUNK_SIZE);
         const boxArray: Box[] = [];
+
+        if(o.center) {
+            const half = o.CHUNK_SIZE / 2;
+            bounds.min.x -= half;
+            bounds.min.z -= half;
+            bounds.max.x -= half;
+            bounds.max.z -= half;
+        }
 
         bounds.max.y = o.maxY;
         bounds.min.y = o.minY;
@@ -114,16 +124,16 @@ export class GreedyMesh {
         var time = 1;
         const boxArray: Box[] = [];
 
-        for(let z = o.bounds.min.z; z < o.bounds.max.z; z++) {
+        for(let z = o.bounds.min.z; z <= o.bounds.max.z; z++) {
 
             // o.bounds.min.y and o.bounds.max.y are both 0
-            for(let y = o.bounds.min.y; y < o.bounds.max.y; y += o.yStep) {
+            for(let y = o.bounds.min.y; y <= o.bounds.max.y; y += o.yStep) {
 
-                for (let x = o.bounds.min.x; x < o.bounds.max.x; x++) {
+                for (let x = o.bounds.min.x; x <= o.bounds.max.x; x++) {
 
                     const pos = new Vector3(x, y, z);
                     const block = o.maps[o.type].get(pos);
-                    if (block == undefined) continue;
+                    if(block == undefined) continue;
 
                     // block found
                     const box: Box = this.#mergeMesh({
@@ -134,7 +144,6 @@ export class GreedyMesh {
                         type: o.type,
                     });
 
-
                     boxArray.push(box);
                 }
             }
@@ -144,103 +153,130 @@ export class GreedyMesh {
     }
 
     #mergeMesh(o: MergeMeshInterface): Box {
-        const max = {
-            width: o.pos.x,
-            height: o.pos.y,
-            depth: o.pos.z,
+        const maxBounds = {
+            x: o.maxBounds.x,
+            y: o.maxBounds.y,
+            z: o.maxBounds.z,
         };
 
-        function iterateDimension(type: "x" | "y" | "z", f: (d: number) => any, skipFirst: boolean = false) {
-            var d;
-            if(skipFirst) {
-                d = o.pos[type];
-            } else {
-                d = o.pos[type] + 1;
+        function iterateDimension(type: "x" | "y" | "z", f: (d: number, end: () => void) => void) {
+            var hasEnded = false;
+            function end() {
+                hasEnded = true
             }
 
+            var d = o.pos[type];
+            const max = maxBounds[type];
+
             if(type == "y") {
-                for( ; d < o.maxBounds[type]; d += o.yStep) f(d);
+                for( ; d <= max; d += o.yStep) {
+                    f(d, end);
+
+                    if(hasEnded) return;
+                }
             } else {
-                for( ; d < o.maxBounds[type]; d += 1) f(d);
+                for( ; d <= max; d++) {
+                    f(d, end);
+
+                    if(hasEnded) return;
+                }
             }
         }
 
-        // Greedy meshes along x-axis
-        iterateDimension("x", x => {
+        const box: Box = {
+            pos: o.pos,
+            width: 1,
+            height: 1,
+            depth: 1,
+            type: BlockType.grass,
+            isGreedyMeshed: true,
+        };
+        
+        const cursor = new Vector3(box.pos.x, box.pos.y, box.pos.z);
+        const firstYLayer = box.pos.y;
+        const firstZLayer = box.pos.z;
 
-            const pos = new Vector3(x, o.pos.y, o.pos.z);
-            const block = o.map.get(pos);
-            if(block == undefined) return;
+        iterateDimension("x", (x, end) => {
+            cursor.x = x;
+            const block = o.map.get(cursor);
 
-            // block of same type found
-            max.width = x;
-            o.map.remove(pos);
+            box.width = x;
+            if(block == undefined) return end();
+
+            o.map.remove(cursor);
         });
 
-        iterateDimension("y", y => {
-            var end: boolean = false;
+        maxBounds.x = box.width-1;
 
-            const foundXAxisBlocks: Vector3[] = [];
-            iterateDimension("x", x => {
+        iterateDimension("y", (y, endY) => {
+            if(y == firstYLayer) return;
+            var hasEnded: boolean = false;
+            cursor.y = y;
 
-                const pos = new Vector3(x, y, o.pos.z);
-                const block = o.map.get(pos);
-                if(block == undefined) return end = true;
+            const toBeRemoved: Vector3[] = [];
+            iterateDimension("x", (x, endX) => {
+                cursor.x = x;
+                const block = o.map.get(cursor);
 
-                foundXAxisBlocks.push(pos);
-            }, true);
-            if(end) return;
+                if(block == undefined) {
+                    hasEnded = true;
+                    return endX();
+                }
 
-            // # When all the blocks in the x-axis are of same type # //
-            max.height = y;
+                toBeRemoved.push(cursor.clone());
+            });
 
-            // Remove the blocks that have been greedy meshed. Die blocks
-            for(const pos of foundXAxisBlocks) o.map.remove(pos);
+            box.height = y;
+            if(hasEnded) return endY();
+
+            for(const pos of toBeRemoved) o.map.remove(pos);
         });
 
-        iterateDimension("z", z => {
+        maxBounds.y = box.height-1;
 
-            var end: boolean = false;
+        iterateDimension("z", (z, endZ) => {
+            if(z == firstZLayer) return;
+            var hasEnded = false;
 
-            iterateDimension("y", y => {
+            cursor.z = z;
 
-                var endY: boolean = false;
-                
-                iterateDimension("x", x => {
+            const toBeRemoved: Vector3[] = [];
+            iterateDimension("y", (y, endY) => {
 
-                    const pos = new Vector3(x, y, z);
-                    const block = o.map.get(pos);
+                cursor.y = y;
 
-                    if(block == undefined) return endY = true;
+                iterateDimension("x", (x, endX) => {
 
-                    max.depth = z;
+                    cursor.x = x;
+                    const block = o.map.get(cursor);
 
+                    if(block == undefined) {
+                        hasEnded = true;
+                        endY();
+                        return endX();
+                    }
+
+                    toBeRemoved.push(cursor.clone());
                 });
 
-                if(endY) return end = true;
+            });
 
-            }, true);
+            box.depth = z;
+            if(hasEnded) return endZ();
 
-            if(end) return;
-
+            for(const pos of toBeRemoved) o.map.remove(pos);
         });
 
-        var isGreedyMeshed: boolean = false;
+        // width, height, depth is min
+        // o.pos is max
+        box.width -= o.pos.x;
+        box.height -= o.pos.y;
+        box.depth -= o.pos.z;
 
-        if(max.width != 1
-        || max.height != 1
-        || max.depth != 1) isGreedyMeshed = true;
-        
+        if(box.width == 1
+        && box.height == 1
+        && box.depth == 1) box.isGreedyMeshed = false;
 
-        const finalBox: Box = {
-            pos: o.pos,
-            width: max.width,
-            height: max.height,
-            depth: max.depth,
-            type: o.type,
-            isGreedyMeshed,
-        };
-
-        return finalBox;
+        return box;
     }
 }

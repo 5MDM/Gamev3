@@ -1,8 +1,9 @@
-import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene, FrontSide, MeshLambertMaterial, Material } from "three";
+import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene, FrontSide, MeshLambertMaterial, Material, RepeatWrapping } from "three";
 import { currentScene } from "../game/world/app";
 import { Octree } from "./octree";
 import { Map3D } from "./map";
 import { GreedyMesh } from "./greedy-mesh";
+import { CHUNK_SIZE } from "../game/world/main";
 
 export interface VoxelFaceArray {
     uvRow: number;
@@ -101,6 +102,9 @@ var tileWidthRatio: number;
 var tileHeightRatio: number;
 var material: Material;
 export function initMaterial(opts: InitMaterialInterface) {
+    opts.atlas.wrapS = RepeatWrapping;
+    opts.atlas.wrapT = RepeatWrapping;
+
     material = new MeshBasicMaterial({
         side: FrontSide,
         map: opts.atlas,
@@ -138,13 +142,25 @@ export class Block {
         }
     }
 
-    init(map: Map3D<BlockType>) {
+    init(map: Map3D<BlockType>, disableCulling: boolean) {
         this.isInitialized = true;
 
-        const geometry = 
-        new BoxGeometry(this.greedyMeshOpts?.width || 1, this.greedyMeshOpts?.height || 1, this.greedyMeshOpts?.depth || 1);
+        var geometry;
+        if(this.greedyMeshOpts != undefined) {
+            geometry = new BoxGeometry(
+                Math.abs(this.greedyMeshOpts.width),
+                Math.abs(this.greedyMeshOpts.height),
+                Math.abs(this.greedyMeshOpts.depth),
+            );
+        } else {
+            geometry = new BoxGeometry();
+        }
+            /*this.greedyMeshOpts?.width,
+            this.greedyMeshOpts?.height,
+            this.greedyMeshOpts?.depth,*/
+        if(this.greedyMeshOpts != undefined) console.log(this.greedyMeshOpts)
 
-        this.#setGeometry(geometry, this.#startPos, map);
+        this.#setGeometry(geometry, this.#startPos, map, disableCulling);
         geometry.computeVertexNormals();
 
         this.mesh = new Mesh(geometry, material);
@@ -152,7 +168,7 @@ export class Block {
         this.mesh.geometry.computeBoundingBox();
     }
 
-    #setGeometry(g: BufferGeometry, pos: Vector3, map: Map3D<BlockType>): void {
+    #setGeometry(g: BufferGeometry, pos: Vector3, map: Map3D<BlockType>, disableCulling: boolean): void {
         const uvs: number[] = [];
         const normals: number[] = [];
         const indexes: number[] = [];
@@ -221,15 +237,15 @@ export class Block {
             );
         }
 
-        g.setAttribute(
+        /*g.setAttribute(
             "position",
             new BufferAttribute(new Float32Array(positions), 3),
         );
         g.setAttribute("normal",
             new BufferAttribute(new Float32Array(normals), 3),
-        );
+        );*/
         g.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2));
-        g.setIndex(indexes);
+        //g.setIndex(indexes);
     }
 
     addToScene(scene: Scene) {

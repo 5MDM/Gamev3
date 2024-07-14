@@ -8,7 +8,7 @@ import { Box } from "./assets/ts/framework/greedy-mesh";
 const greedyMesh = new GreedyMesh(postMessage);
 const CHUNK_SIZE = 8;
 
-const noise = createNoise2D();
+const noise = createNoise2D(() => 0);
 function getRandomElevation(pos: Vector2): number {
     function smooth(intensity: number): number {
         return noise(pos.x * intensity, pos.y * intensity);
@@ -62,7 +62,7 @@ function loadChunk(chunkPos: Vector3) {
                 width: 1,
                 height: 1,
                 depth: 1,
-                isGreedyMeshed: false,
+                isGreedyMeshed: true,
                 type,
             });*/
 
@@ -78,6 +78,7 @@ function loadChunk(chunkPos: Vector3) {
         maps: blockMap,
         minY: chunkMin.y,
         maxY: chunkMax.y,
+        center: true,
     });
     
     postMessage({

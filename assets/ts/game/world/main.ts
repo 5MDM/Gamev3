@@ -50,13 +50,13 @@ export async function startGame() {
     m.position.z = -10;
     scene.add(m);
 
-    world.generateChunk(new Vector3(0, 0, 0));
+    /*world.generateChunk(new Vector3(0, 0, 0));
     world.generateChunk(new Vector3(1, 0, 0));
-    world.generateChunk(new Vector3(0, 1, 0));
     world.generateChunk(new Vector3(0, 0, 1));
-    world.generateChunk(new Vector3(1, 1, 0));
     world.generateChunk(new Vector3(1, 0, 1));
-    world.generateChunk(new Vector3(0, 1, 1));
-    world.generateChunk(new Vector3(1, 1, 1));
+    world.generateChunk(new Vector3(-1, 0, 0));
+    world.generateChunk(new Vector3(0, 0, -1));
+    world.generateChunk(new Vector3(-1, 0, -1));*/
+    world.generateChunk(new Vector3(0, 0, 0))
     renderLoop();
 }
