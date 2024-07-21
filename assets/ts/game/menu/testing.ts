@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { Box, GreedyMesh, MapInterface } from "../../framework/greedy-mesh";
+import { Box, GreedyMesh, iterateGreedyMesh, MapInterface } from "../../framework/greedy-mesh";
 import { Map3D } from "../../framework/map";
 
 export function greedyMeshTest(p: HTMLParagraphElement) {
@@ -54,6 +54,10 @@ export function greedyMeshTest(p: HTMLParagraphElement) {
         minY: 0,
         maxY: 4,
         center: false,
+    });
+
+    iterateGreedyMesh(blocks, 0.5, box => {
+        console.log(box);
     });
 
     const firstBlock = blocks[0];

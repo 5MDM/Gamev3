@@ -28,6 +28,8 @@ interface IndividualMeshInterface {
     boxArray: Box[];
     type: number;
     maps: MapInterface;
+    center: boolean;
+    halfChunk: number;
 }
 
 export interface Box {
@@ -56,6 +58,8 @@ interface MergeMeshInterface {
     map: Map3D<boolean>;
     yStep: number;
     type: number;
+    center: boolean;
+    halfChunk: number;
 }
 
 export class GreedyMesh {
@@ -90,8 +94,8 @@ export class GreedyMesh {
         const bounds: BoundsInterface = this.#calculateXZBounds(o.chunkPos, o.CHUNK_SIZE);
         const boxArray: Box[] = [];
 
+        const half = o.CHUNK_SIZE / 2;
         if(o.center) {
-            const half = o.CHUNK_SIZE / 2;
             bounds.min.x -= half;
             bounds.min.z -= half;
             bounds.max.x -= half;
@@ -112,6 +116,8 @@ export class GreedyMesh {
                 boxArray,
                 type: Number(type),
                 maps: o.maps,
+                center: o.center,
+                halfChunk: half,
             });
 
             boxArray.push(...boxes);
@@ -142,6 +148,8 @@ export class GreedyMesh {
                         map: o.maps[o.type],
                         yStep: o.yStep,
                         type: o.type,
+                        center: o.center,
+                        halfChunk: o.halfChunk,
                     });
 
                     boxArray.push(box);
@@ -184,12 +192,12 @@ export class GreedyMesh {
         }
 
         const box: Box = {
-            pos: o.pos,
-            width: 1,
-            height: 1,
-            depth: 1,
+            pos: o.pos.clone(),
+            width: o.pos.x + 1,
+            height: o.pos.y + 1,
+            depth: o.pos.z + 1,
             type: BlockType.grass,
-            isGreedyMeshed: true,
+            isGreedyMeshed: false,
         };
         
         const cursor = new Vector3(box.pos.x, box.pos.y, box.pos.z);
@@ -202,6 +210,7 @@ export class GreedyMesh {
 
             box.width = x;
             if(block == undefined) return end();
+            box.isGreedyMeshed = true;
 
             o.map.remove(cursor);
         });
@@ -228,11 +237,12 @@ export class GreedyMesh {
 
             box.height = y;
             if(hasEnded) return endY();
+            box.isGreedyMeshed = true;
 
             for(const pos of toBeRemoved) o.map.remove(pos);
         });
 
-        maxBounds.y = box.height-1;
+        maxBounds.y = box.height-o.yStep;
 
         iterateDimension("z", (z, endZ) => {
             if(z == firstZLayer) return;
@@ -263,20 +273,48 @@ export class GreedyMesh {
 
             box.depth = z;
             if(hasEnded) return endZ();
+            box.isGreedyMeshed = true;
 
             for(const pos of toBeRemoved) o.map.remove(pos);
         });
+        // width, height, depth is max
+        // o.pos is min
 
-        // width, height, depth is min
-        // o.pos is max
         box.width -= o.pos.x;
         box.height -= o.pos.y;
         box.depth -= o.pos.z;
 
-        if(box.width == 1
-        && box.height == 1
-        && box.depth == 1) box.isGreedyMeshed = false;
+        if(box.width <= 0) box.width = 1;
+        if(box.height <= 0) box.height = 1;
+        if(box.depth <= 0) box.depth = 1;
 
         return box;
+    }
+}
+
+export function iterateGreedyMesh(blocks: Box[], yStep: number, f: (box: Box) => void) {
+    function iterateGreedyBoxes(block: Box) {
+        for(let x = block.pos.x; x <= block.pos.x + block.width - 1; x++) {
+            for(let y = block.pos.y; y <= block.pos.y + block.height - 1; y += yStep) {
+                for(let z = block.pos.z; z <= block.pos.z + block.depth - 1; z++) {
+                    f({
+                        pos: { x, y, z },
+                        isGreedyMeshed: false,
+                        width: 1,
+                        height: 1,
+                        depth: 1,
+                        type: block.type,
+                    });
+                }
+            }
+        }
+    }
+
+    for(const block of blocks) {
+        if(block.isGreedyMeshed) {
+            iterateGreedyBoxes(block);
+        } else {
+            f(block);
+        }
     }
 }

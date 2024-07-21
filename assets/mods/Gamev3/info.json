@@ -1,0 +1,10 @@
+{
+    "name": "Gamev3",
+    "description": "This is Gamev3's main story mode. Gamev3 is the engine while this mod is the main content",
+    "namespace": "g",
+    "content": {
+        "blocks": {
+            "block_size": 32
+        }
+    }
+}

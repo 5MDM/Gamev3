@@ -1,11 +1,14 @@
-import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene, FrontSide, MeshLambertMaterial, Material, RepeatWrapping } from "three";
+import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene, FrontSide, MeshLambertMaterial, Material, RepeatWrapping, BoxHelper, Vector2, CanvasTexture } from "three";
 import { currentScene } from "../game/world/app";
 import { Octree } from "./octree";
 import { Map3D } from "./map";
-import { GreedyMesh } from "./greedy-mesh";
+import { GreedyMesh, iterateGreedyMesh } from "./greedy-mesh";
 import { CHUNK_SIZE } from "../game/world/main";
+import { depth, materialClearcoatNormal, outputStruct } from "three/examples/jsm/nodes/Nodes.js";
+import { UVsDebug } from "three/examples/jsm/Addons.js";
 
 export interface VoxelFaceArray {
+    type: string;
     uvRow: number;
     dir: [number, number, number],
     corners: [
@@ -18,6 +21,7 @@ export interface VoxelFaceArray {
 
 export const faces: VoxelFaceArray[] = [
     { // left
+        type: "left",
         uvRow: 0,
         dir: [-1, 0, 0,],
         corners: [
@@ -28,6 +32,7 @@ export const faces: VoxelFaceArray[] = [
         ],
     },
     { // right
+        type: "right",
         uvRow: 0,
         dir: [1, 0, 0,],
         corners: [
@@ -38,6 +43,7 @@ export const faces: VoxelFaceArray[] = [
         ],
     },
     { // bottom
+        type: "bottom",
         uvRow: 1,
         dir: [0, -1, 0,],
         corners: [
@@ -48,6 +54,7 @@ export const faces: VoxelFaceArray[] = [
         ],
     },
     { // top
+        type: "top",
         uvRow: 2,
         dir: [0, 1, 0,],
         corners: [
@@ -58,6 +65,7 @@ export const faces: VoxelFaceArray[] = [
         ],
     },
     { // back
+        type: "back",
         uvRow: 0,
         dir: [0, 0, -1,],
         corners: [
@@ -68,6 +76,7 @@ export const faces: VoxelFaceArray[] = [
         ],
     },
     { // front
+        type: "front",
         uvRow: 0,
         dir: [0, 0, 1,],
         corners: [
@@ -100,12 +109,14 @@ interface InitMaterialInterface {
 
 var tileWidthRatio: number;
 var tileHeightRatio: number;
-var material: Material;
+var cubeMaterial: Material;
+var atlas: Texture;
 export function initMaterial(opts: InitMaterialInterface) {
     opts.atlas.wrapS = RepeatWrapping;
     opts.atlas.wrapT = RepeatWrapping;
+    atlas = opts.atlas;
 
-    material = new MeshBasicMaterial({
+    cubeMaterial = new MeshBasicMaterial({
         side: FrontSide,
         map: opts.atlas,
     });
@@ -120,16 +131,19 @@ export enum BlockType {
 }
 
 export class Block {
+    yStep: number = 0.5;
     type: BlockType;
     isDeleted: boolean = false;
     isGreedyMeshed: boolean = false;
-    greedyMeshOpts?: GreedyMeshSize;
+    width: number = 1;
+    height: number = 1;
+    depth: number = 1;
     isInitialized: boolean = false;
     mesh?: Mesh;
     #startPos: Vector3;
 
     constructor(opts: BlockOpts) {
-        if(material == undefined) throw new Error(
+        if(atlas == undefined) throw new Error(
             "block.ts: material and atlas wasn't initiated"
         );
 
@@ -138,34 +152,104 @@ export class Block {
 
         if(opts.greedyMesh != undefined) {
             this.isGreedyMeshed = true;
-            this.greedyMeshOpts = opts.greedyMesh;
+            this.width = Math.abs(opts.greedyMesh.width);
+            this.height = Math.abs(opts.greedyMesh.height);
+            this.depth = Math.abs(opts.greedyMesh.depth);
         }
     }
 
     init(map: Map3D<BlockType>, disableCulling: boolean) {
         this.isInitialized = true;
 
-        var geometry;
-        if(this.greedyMeshOpts != undefined) {
-            geometry = new BoxGeometry(
-                Math.abs(this.greedyMeshOpts.width),
-                Math.abs(this.greedyMeshOpts.height),
-                Math.abs(this.greedyMeshOpts.depth),
-            );
-        } else {
-            geometry = new BoxGeometry();
-        }
-            /*this.greedyMeshOpts?.width,
-            this.greedyMeshOpts?.height,
-            this.greedyMeshOpts?.depth,*/
-        if(this.greedyMeshOpts != undefined) console.log(this.greedyMeshOpts)
+        const geometry = new BoxGeometry(this.width, this.height, this.depth);
+        
+        var material = cubeMaterial;
+        if(this.isGreedyMeshed) {
+            const t = atlas.clone();
+            //t.repeat = new Vector2(this.depth, this.height);
 
-        this.#setGeometry(geometry, this.#startPos, map, disableCulling);
+            material = new MeshBasicMaterial({
+                map: t,
+                side: FrontSide,
+            });
+
+
+        }
+
+        this.#UVMap(geometry, disableCulling);
         geometry.computeVertexNormals();
 
         this.mesh = new Mesh(geometry, material);
         this.mesh.position.copy(this.#startPos);
         this.mesh.geometry.computeBoundingBox();
+    }
+
+    #UVMap(g: BufferGeometry, disableCulling: boolean): void {
+        if(this.isGreedyMeshed) {
+            /*for(let x = this.#startPos.x; x <= this.#startPos.x + this.width - 1; x++) {
+                for(let y = this.#startPos.y; y <= this.#startPos.y + this.height - 1; y++) {
+                    for(let z = this.#startPos.z; z <= this.#startPos.z + this.depth - 1; z++) {
+                        const pos = new Vector3(x, y, z);
+                        this.#singularUVMap(g, pos, disableCulling);
+                    }
+                }
+            }*/
+           this.#singularUVMap(g, this.#startPos, disableCulling);
+        } else {
+            this.#singularUVMap(g, this.#startPos, disableCulling);
+        }
+    }
+
+    #determineFace(type: string): [number, number] {
+        if(!this.isGreedyMeshed) return [1, 1];
+        var faceWidth = 1;
+        var faceHeight = 1;
+
+        switch (type) {
+            case "left":
+            case "right":
+                faceWidth = this.depth;
+                faceHeight = this.height;
+                break;
+            case "bottom":
+            case "top":
+                faceWidth = this.width;
+                faceHeight = this.depth;
+                break;
+            case "front":
+            case "back":
+                faceWidth = this.width;
+                faceHeight = this.height;
+                break;
+        }
+
+        return [faceWidth, faceHeight];
+    }
+
+    #singularUVMap(g: BufferGeometry, pos: Vector3, disableCulling: boolean) {
+        const UVs: number[] = [];
+
+        for(const {corners, uvRow, dir, type} of faces) {
+            const [width, height] = this.#determineFace(type);
+
+            for(const p of corners) {
+                /*const u = (p.uv[0] * width) % 1;
+                const v = (p.uv[1] * height) % 1;
+                const one = (this.type + u) * tileWidthRatio;
+                const two = 1 - (uvRow + v) * tileHeightRatio;*/
+
+                const u = p.uv[0];
+                const v = p.uv[1];
+            
+                // Adjust u and v coordinates to account for repeating and the atlas layout
+                const one = (this.type + u) * tileWidthRatio;
+                const two = 1 - ((uvRow + v) * tileHeightRatio);
+
+                UVs.push(one, two);
+            }
+        }
+
+        g.setAttribute("uv", new BufferAttribute(new Float32Array(UVs), 2));
     }
 
     #setGeometry(g: BufferGeometry, pos: Vector3, map: Map3D<BlockType>, disableCulling: boolean): void {
@@ -180,7 +264,7 @@ export class Block {
               pos.y + dir[1],
               pos.z + dir[2],
             );
-            
+
             if(neighbor == undefined) {
               // make face
               const ndx = positions.length / 3;
@@ -217,9 +301,9 @@ export class Block {
             const ndx = positions.length / 3;
             for (const p of corners) {
                 positions.push(
-                    p.pos[0] + pos.x + (this.greedyMeshOpts?.width || size),
-                    p.pos[1] + pos.y + (this.greedyMeshOpts?.height || size),
-                    p.pos[2] + pos.z + (this.greedyMeshOpts?.depth || size),
+                    p.pos[0] + pos.x + (this.width),
+                    p.pos[1] + pos.y + (this.height),
+                    p.pos[2] + pos.z + (this.depth),
                 );
 
                 uvs.push(
