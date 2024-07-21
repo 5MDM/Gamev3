@@ -1,4 +1,4 @@
-import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene, FrontSide, MeshLambertMaterial, Material, RepeatWrapping, BoxHelper, Vector2, CanvasTexture } from "three";
+import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene, FrontSide, MeshLambertMaterial, Material, RepeatWrapping, BoxHelper, Vector2, CanvasTexture, CubeTexture } from "three";
 import { currentScene } from "../game/world/app";
 import { Octree } from "./octree";
 import { Map3D } from "./map";
@@ -6,6 +6,7 @@ import { GreedyMesh, iterateGreedyMesh } from "./greedy-mesh";
 import { CHUNK_SIZE } from "../game/world/main";
 import { depth, materialClearcoatNormal, outputStruct } from "three/examples/jsm/nodes/Nodes.js";
 import { UVsDebug } from "three/examples/jsm/Addons.js";
+import { BlockFinalTexture } from "./world";
 
 export interface VoxelFaceArray {
     type: string;
@@ -102,7 +103,7 @@ export interface BlockOpts {
 
 interface InitMaterialInterface {
     tileSize: number;
-    atlas: Texture;
+    textures: BlockFinalTexture;
     tileWidthRatio: number;
     tileHeightRatio: number;
 }
@@ -110,15 +111,14 @@ interface InitMaterialInterface {
 var tileWidthRatio: number;
 var tileHeightRatio: number;
 var cubeMaterial: Material;
-var atlas: Texture;
-export function initMaterial(opts: InitMaterialInterface) {
-    opts.atlas.wrapS = RepeatWrapping;
-    opts.atlas.wrapT = RepeatWrapping;
-    atlas = opts.atlas;
 
+var textures: BlockFinalTexture;
+
+export function initMaterial(opts: InitMaterialInterface) {
+    textures = opts.textures;
     cubeMaterial = new MeshBasicMaterial({
-        side: FrontSide,
-        map: opts.atlas,
+        //side: FrontSide,
+        envMap: textures.Grass,
     });
 
     tileWidthRatio = opts.tileWidthRatio;
@@ -143,8 +143,8 @@ export class Block {
     #startPos: Vector3;
 
     constructor(opts: BlockOpts) {
-        if(atlas == undefined) throw new Error(
-            "block.ts: material and atlas wasn't initiated"
+        if(textures == undefined) throw new Error(
+            "block.ts: material and textures wasn't initiated"
         );
 
         this.type = opts.type;
@@ -158,25 +158,18 @@ export class Block {
         }
     }
 
-    init(map: Map3D<BlockType>, disableCulling: boolean) {
+    init(map: Map3D<BlockType>) {
         this.isInitialized = true;
 
         const geometry = new BoxGeometry(this.width, this.height, this.depth);
         
-        var material = cubeMaterial;
+        const material = cubeMaterial;
         if(this.isGreedyMeshed) {
-            const t = atlas.clone();
-            //t.repeat = new Vector2(this.depth, this.height);
-
-            material = new MeshBasicMaterial({
-                map: t,
-                side: FrontSide,
-            });
-
+            // needs update
 
         }
 
-        this.#UVMap(geometry, disableCulling);
+        this.#UVMap(geometry);
         geometry.computeVertexNormals();
 
         this.mesh = new Mesh(geometry, material);
@@ -184,7 +177,7 @@ export class Block {
         this.mesh.geometry.computeBoundingBox();
     }
 
-    #UVMap(g: BufferGeometry, disableCulling: boolean): void {
+    #UVMap(g: BufferGeometry): void {
         if(this.isGreedyMeshed) {
             /*for(let x = this.#startPos.x; x <= this.#startPos.x + this.width - 1; x++) {
                 for(let y = this.#startPos.y; y <= this.#startPos.y + this.height - 1; y++) {
@@ -194,9 +187,9 @@ export class Block {
                     }
                 }
             }*/
-           this.#singularUVMap(g, this.#startPos, disableCulling);
+           //this.#singularUVMap(g, this.#startPos, disableCulling);
         } else {
-            this.#singularUVMap(g, this.#startPos, disableCulling);
+            //this.#singularUVMap(g, this.#startPos, disableCulling);
         }
     }
 
@@ -224,32 +217,6 @@ export class Block {
         }
 
         return [faceWidth, faceHeight];
-    }
-
-    #singularUVMap(g: BufferGeometry, pos: Vector3, disableCulling: boolean) {
-        const UVs: number[] = [];
-
-        for(const {corners, uvRow, dir, type} of faces) {
-            const [width, height] = this.#determineFace(type);
-
-            for(const p of corners) {
-                /*const u = (p.uv[0] * width) % 1;
-                const v = (p.uv[1] * height) % 1;
-                const one = (this.type + u) * tileWidthRatio;
-                const two = 1 - (uvRow + v) * tileHeightRatio;*/
-
-                const u = p.uv[0];
-                const v = p.uv[1];
-            
-                // Adjust u and v coordinates to account for repeating and the atlas layout
-                const one = (this.type + u) * tileWidthRatio;
-                const two = 1 - ((uvRow + v) * tileHeightRatio);
-
-                UVs.push(one, two);
-            }
-        }
-
-        g.setAttribute("uv", new BufferAttribute(new Float32Array(UVs), 2));
     }
 
     #setGeometry(g: BufferGeometry, pos: Vector3, map: Map3D<BlockType>, disableCulling: boolean): void {

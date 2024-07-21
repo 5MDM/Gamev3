@@ -1,14 +1,18 @@
-import { Texture, Scene, AmbientLight, NearestFilter, NearestMipmapNearestFilter, Vector2, Vector3 } from "three";
+import { Texture, Scene, AmbientLight, NearestFilter, NearestMipmapNearestFilter, Vector2, Vector3, CubeTexture } from "three";
 import {Map3D} from "./map";
 import { Octree } from "./octree";
 import {Chunk} from "./chunk";
 import { initMaterial } from "./block";
 import {executeInRadius} from "./map";
 
+export interface BlockFinalTexture {
+    [index: string]: CubeTexture;
+}
+
 interface WorldOpts {
     scene: Scene;
     CHUNK_SIZE: number;
-    textureAtlas: Texture;
+    textureObj: BlockFinalTexture;
     uv: {
         size: number;
         imageWidth: number;
@@ -31,11 +35,8 @@ export class World {
 
         this.scene.add(new AmbientLight(0xffffff, 50));
 
-        opts.textureAtlas.magFilter = NearestFilter;
-        opts.textureAtlas.minFilter = NearestMipmapNearestFilter;
-        opts.textureAtlas.generateMipmaps = false;
         initMaterial({
-            atlas: opts.textureAtlas,
+            textures: opts.textureObj,
             tileSize: opts.uv.size,
             tileWidthRatio: this.tileWidthRatio,
             tileHeightRatio: this.tileHeightRatio,

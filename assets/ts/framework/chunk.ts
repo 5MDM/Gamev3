@@ -167,7 +167,7 @@ export class Chunk {
             worker.removeEventListener("message", this.workerListener!);
 
             for(const block of self.blockList) {
-                block.init(self.map, true);
+                block.init(self.map);
                 block.addToScene(currentScene);
             }
         }

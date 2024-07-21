@@ -1,6 +1,7 @@
-import { CubeTexture, CubeTextureLoader, Texture } from "three";
+import { CubeRefractionMapping, CubeTexture, CubeTextureLoader, NearestFilter, NearestMipmapNearestFilter, RepeatWrapping, Texture } from "three";
+import { BlockFinalTexture } from "../../framework/world";
 
-export const mods: {[index: string]: Mod} = {};
+const mods: {[index: string]: Mod} = {};
 
 interface InfoInterface {
     name: string;
@@ -31,10 +32,6 @@ interface BlockInterface {
     name: string;
     texture?: string;
     textures?: BlockTextureInterface;
-}
-
-interface BlockFinalTexture {
-    [index: string]: CubeTexture;
 }
 
 interface globDefault<T = any> {
@@ -80,18 +77,29 @@ export class ModParser {
         .then(() => callback());
     }
 
-    parseAllMods() {
+    parseAllMods(): Promise<{[modName: string]: Mod}> {
+        var prRes: (mods: {[modName: string]: Mod}) => void;
+        const pr = new Promise<{[modName: string]: Mod}>(res => prRes = res);
+
         const paths: PathList = import.meta.glob<globDefault<InfoInterface>>("../../../mods/*/info.json");
+
         if(Object.keys(paths).length == 0) throw new Error(
             "parser-class.ts: "
         +   `path of "${paths}" doesn't have any folders or files`
         );
 
-        this.#iteratePaths(paths, path => this.#registerMods(path), () => {
+        this.#iteratePaths(paths, path => this.#registerMods(path), async () => {
+            const mods: {[modName: string]: Mod} = {};
             for(const modName in this.registeredMods) {
-                this.#parseMod(this.registeredMods[modName]);
+                const mod = await this.#parseMod(this.registeredMods[modName]);
+                mod.finalize();
+                mods[modName] = mod;
             }
+
+            prRes(mods);
         });
+
+        return pr;
     }
 
     #registerMods(o: InfoInterface) {
@@ -99,7 +107,7 @@ export class ModParser {
         this.registeredMods[o.name] = o as ModInterface;
     }
 
-    async #parseMod(o: ModInterface) {
+    async #parseMod(o: ModInterface): Promise<Mod> {
         const mod = new Mod();
 
         if(o.content.blocks) {
@@ -107,7 +115,17 @@ export class ModParser {
             mod.initBlocks(blocks);
         }
 
+        return mod;
+    }
 
+    #setTextureAttributes(texture: Texture): void {
+        texture.magFilter = NearestFilter;
+        texture.minFilter = NearestMipmapNearestFilter;
+        texture.generateMipmaps = false; // set to true later
+        texture.wrapS = RepeatWrapping;
+        texture.wrapT = RepeatWrapping;
+        texture.mapping = CubeRefractionMapping;
+        texture.repeat.set(2, 2);
     }
 
     async #parseBlocks(o: ModInterface): Promise<BlockFinalTexture> {
@@ -116,6 +134,7 @@ export class ModParser {
 
         for(const block of blocks) {
             const texture: CubeTexture = await this.#parseSingularBlock(o.path + "blocks/", block);
+            this.#setTextureAttributes(texture);
             blockTextures[block.name] = texture;
         }
 

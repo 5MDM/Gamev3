@@ -10,7 +10,7 @@ export const app = new WebGLRenderer({
 
 if(!gameState.devMode) app.debug.checkShaderErrors = false;
 
-//app.shadowMap.autoUpdate = false;
+app.shadowMap.autoUpdate = false;
 
 export var currentScene: Scene;
 export var currentCamera: Camera;

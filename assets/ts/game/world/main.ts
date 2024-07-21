@@ -5,6 +5,7 @@ import { $ } from "../../framework/util";
 import { worker } from "../worker";
 import { setWorker } from "../../framework/chunk";
 import "./camera";
+import { mods } from "../parser/parser";
 
 // decrease for pixelation
 const IMAGE_SIZE = 32;
@@ -14,22 +15,17 @@ const scene = new Scene();
 setScene(scene);
 setWorker(worker);
 
-($("#ui > #loading") as HTMLDivElement)!.style.display = "none";
-
 export async function startGame() {
-    /*const canvasTexture = new CanvasTexture(atlas.canvas);
-    canvasTexture.colorSpace = SRGBColorSpace;
-
     const world = new World({
         CHUNK_SIZE,
         scene,
-        textureAtlas: textureArray,
+        textureObj: mods.Gamev3.blocks,
         uv: {
             size: IMAGE_SIZE,
             imageWidth: 32,
             imageHeight: 32,
         },
-    });*/
+    });
 
     const m = new Mesh(
         new BoxGeometry(100, 1, 100),
@@ -45,6 +41,6 @@ export async function startGame() {
     world.generateChunk(new Vector3(-1, 0, 0));
     world.generateChunk(new Vector3(0, 0, -1));
     world.generateChunk(new Vector3(-1, 0, -1));*/
-    //world.generateChunk(new Vector3(0, 0, 0))
+    world.generateChunk(new Vector3(0, 0, 0));
     renderLoop();
 }

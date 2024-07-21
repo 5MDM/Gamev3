@@ -5,6 +5,7 @@
     "content": {
         "blocks": {
             "block_size": 32
-        }
+        },
+        "biomes": {}
     }
 }
