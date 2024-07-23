@@ -4,7 +4,7 @@ import { ControlCamera } from "../../framework/camera";
 import { $, clamp } from "../../framework/util";
 
 export const camera = new PerspectiveCamera(90, innerWidth / innerHeight, 0.1, 5 * 1000);
-camera.position.y = 10;
+camera.position.y = 5;
 setCamera(camera);
 
 export const controlCam = new ControlCamera({

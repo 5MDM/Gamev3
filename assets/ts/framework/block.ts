@@ -6,7 +6,7 @@ import { GreedyMesh, iterateGreedyMesh } from "./greedy-mesh";
 import { CHUNK_SIZE } from "../game/world/main";
 import { depth, materialClearcoatNormal, outputStruct } from "three/examples/jsm/nodes/Nodes.js";
 import { UVsDebug } from "three/examples/jsm/Addons.js";
-import { BlockFinalTexture } from "./world";
+import { BlockTextureMap } from "../game/parser/parser-class";
 
 export interface VoxelFaceArray {
     type: string;
@@ -103,24 +103,18 @@ export interface BlockOpts {
 
 interface InitMaterialInterface {
     tileSize: number;
-    textures: BlockFinalTexture;
+    textures: BlockTextureMap;
     tileWidthRatio: number;
     tileHeightRatio: number;
 }
 
 var tileWidthRatio: number;
 var tileHeightRatio: number;
-var cubeMaterial: Material;
 
-var textures: BlockFinalTexture;
+var textures: BlockTextureMap;
 
 export function initMaterial(opts: InitMaterialInterface) {
     textures = opts.textures;
-    cubeMaterial = new MeshBasicMaterial({
-        //side: FrontSide,
-        envMap: textures.Grass,
-    });
-
     tileWidthRatio = opts.tileWidthRatio;
     tileHeightRatio = opts.tileHeightRatio;
 }
@@ -163,16 +157,25 @@ export class Block {
 
         const geometry = new BoxGeometry(this.width, this.height, this.depth);
         
-        const material = cubeMaterial;
-        if(this.isGreedyMeshed) {
-            // needs update
+        var t = textures.Grass;
 
+        if(this.isGreedyMeshed) {
+            t = t.clone();
+            t.scaleWidth(this.width);
+            t.scaleHeight(this.height);
+            t.scaleDepth(this.depth);
+            console.log(this.width, this.height, this.depth);
         }
 
         this.#UVMap(geometry);
         geometry.computeVertexNormals();
 
-        this.mesh = new Mesh(geometry, material);
+        const materials = t.getArray(t => new MeshBasicMaterial({
+            map: t,
+            side: FrontSide,
+        }));
+
+        this.mesh = new Mesh(geometry, materials);
         this.mesh.position.copy(this.#startPos);
         this.mesh.geometry.computeBoundingBox();
     }

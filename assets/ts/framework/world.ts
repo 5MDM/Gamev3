@@ -4,15 +4,12 @@ import { Octree } from "./octree";
 import {Chunk} from "./chunk";
 import { initMaterial } from "./block";
 import {executeInRadius} from "./map";
-
-export interface BlockFinalTexture {
-    [index: string]: CubeTexture;
-}
+import { BlockTextureMap } from "../game/parser/parser-class";
 
 interface WorldOpts {
     scene: Scene;
     CHUNK_SIZE: number;
-    textureObj: BlockFinalTexture;
+    textureObj: BlockTextureMap;
     uv: {
         size: number;
         imageWidth: number;
@@ -70,7 +67,7 @@ export class World {
         if(this.chunkMap.get(chunkPos) != undefined) return;
 
         const chunk = new Chunk({
-            seed: 0,
+            seed: Math.round(Math.random() * 100),
             chunkPos, 
             CHUNK_SIZE: this.CHUNK_SIZE,
         });

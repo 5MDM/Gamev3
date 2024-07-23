@@ -130,11 +130,11 @@ export class Chunk {
 
             iterateGreedyMesh(blockArray, 0.5, box => {
                 const pos = new Vector3(box.pos.x, box.pos.y, box.pos.z);
-                if(self.map.get(pos) != undefined) throw new Error(
+                /*if(self.map.get(pos) != undefined) throw new Error(
                     "chunk.ts: "
                 +   `block at (${box.pos.x}, ${box.pos.y}, ${box.pos.z}) is `
                 +   "already filled"
-                );
+                );*/
                 self.map.set(pos, box.type);
             });
 

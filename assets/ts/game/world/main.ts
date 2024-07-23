@@ -9,7 +9,7 @@ import { mods } from "../parser/parser";
 
 // decrease for pixelation
 const IMAGE_SIZE = 32;
-export const CHUNK_SIZE = 8;
+export const CHUNK_SIZE = 64;
 
 const scene = new Scene();
 setScene(scene);
@@ -42,5 +42,6 @@ export async function startGame() {
     world.generateChunk(new Vector3(0, 0, -1));
     world.generateChunk(new Vector3(-1, 0, -1));*/
     world.generateChunk(new Vector3(0, 0, 0));
+    //world.generateChunksWithinRadius(new Vector3(0, 0, 0), 2);
     renderLoop();
 }

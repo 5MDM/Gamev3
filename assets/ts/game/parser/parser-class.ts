@@ -1,5 +1,20 @@
-import { CubeRefractionMapping, CubeTexture, CubeTextureLoader, NearestFilter, NearestMipmapNearestFilter, RepeatWrapping, Texture } from "three";
-import { BlockFinalTexture } from "../../framework/world";
+import { CubeRefractionMapping, CubeTexture, CubeTextureLoader, Material, NearestFilter, NearestMipmapNearestFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from "three";
+
+export interface BlockTextureMap {
+    [blockName: string]: ScalableTexture;
+}
+
+type MaterialSidesArray = [Material, Material, Material, Material, Material, Material];
+
+interface BlockTextureSides {
+    [sideName: string]: Texture;
+    top: Texture;
+    bottom: Texture;
+    left: Texture;
+    right: Texture;
+    front: Texture;
+    back: Texture;
+}
 
 const mods: {[index: string]: Mod} = {};
 
@@ -40,7 +55,24 @@ interface globDefault<T = any> {
 
 type PathList = Record<string, () => Promise<globDefault>>;
 
-const textureLoader = new CubeTextureLoader();
+const textureLoader = new TextureLoader();
+
+function ld(url: string): Promise<Texture> {
+    const pr = new Promise<Texture>(res => {
+        textureLoader.load(url, texture => {
+            texture.magFilter = NearestFilter;
+            texture.minFilter = NearestMipmapNearestFilter;
+            texture.generateMipmaps = false; // set to true later
+            texture.wrapS = RepeatWrapping;
+            texture.wrapT = RepeatWrapping;
+            texture.mapping = CubeRefractionMapping;
+            texture.colorSpace = SRGBColorSpace;
+            res(texture);
+        });
+    });
+
+    return pr;
+}
 
 export class ModParser {
     modPath = import.meta.glob<globDefault>("../../../mods/**");
@@ -118,33 +150,19 @@ export class ModParser {
         return mod;
     }
 
-    #setTextureAttributes(texture: Texture): void {
-        texture.magFilter = NearestFilter;
-        texture.minFilter = NearestMipmapNearestFilter;
-        texture.generateMipmaps = false; // set to true later
-        texture.wrapS = RepeatWrapping;
-        texture.wrapT = RepeatWrapping;
-        texture.mapping = CubeRefractionMapping;
-        texture.repeat.set(2, 2);
-    }
-
-    async #parseBlocks(o: ModInterface): Promise<BlockFinalTexture> {
+    async #parseBlocks(o: ModInterface): Promise<BlockTextureMap> {
         const blocks: BlockInterface[] = this.memory[o.path + "blocks.json"];
-        const blockTextures: BlockFinalTexture = {};
+        const blockTextures: BlockTextureMap = {};
 
         for(const block of blocks) {
-            const texture: CubeTexture = await this.#parseSingularBlock(o.path + "blocks/", block);
-            this.#setTextureAttributes(texture);
-            blockTextures[block.name] = texture;
+            const st: ScalableTexture = await this.#parseSingularBlock(o.path + "blocks/", block);
+            blockTextures[block.name] = st;
         }
 
         return blockTextures;
     }
 
-    #parseSingularBlock(path: string, block: BlockInterface): Promise<CubeTexture> {
-        var prRes: (value: CubeTexture) => void;
-        const pr = new Promise<CubeTexture>(e => prRes = e);
-
+    async #parseSingularBlock(path: string, block: BlockInterface): Promise<ScalableTexture> {
         const textures: BlockTextureInterface = {
             top: block.textures?.top || block.texture,
             bottom: block.textures?.bottom || block.texture,
@@ -164,24 +182,16 @@ export class ModParser {
             textures[texture] = this.memory[path + textures[texture]];
         }
 
-        textureLoader.load([
-            textures.front!,
-            textures.back!,
-            textures.top!,
-            textures.bottom!,
-            textures.right!,
-            textures.left!,
-        ], texture => {
-            prRes(texture);
-        }, () => undefined, err => {
-            throw new Error(
-                "parser-class.ts: "
-            +   `Failed to load block "${block.name}"`, {
-                cause: err,
-            });
+        const st = new ScalableTexture({
+            top: await ld(textures.top!),
+            bottom: await ld(textures.bottom!),
+            left: await ld(textures.left!),
+            right: await ld(textures.right!),
+            front: await ld(textures.front!),
+            back: await ld(textures.back!),
         });
 
-        return pr;
+        return st;
     }
 }
 
@@ -193,7 +203,7 @@ class Mod {
 
     hasContent: {[index: string]: boolean} = {};
 
-    blocks: BlockFinalTexture = {};
+    blocks: BlockTextureMap = {};
 
     textures: {[blockName: string]: Texture} = {};
 
@@ -208,9 +218,75 @@ class Mod {
         this.isFinalized = true;
     }
 
-    initBlocks(blocks: BlockFinalTexture): void {
+    initBlocks(blocks: BlockTextureMap): void {
         this.#checkIfFinalized();
         this.hasContent.blocks = true;
         this.blocks = blocks;
+    }
+}
+
+// bottom is front
+
+export class ScalableTexture {
+    t: BlockTextureSides;
+    isScaled: boolean = false;
+
+    constructor(o: BlockTextureSides) {
+        this.t = o;
+    }
+
+    iterateTextures(f: (t: Texture) => void) {
+        for(const name in this.t) f(this.t[name]);
+    }
+
+    clone(): ScalableTexture {
+        const newTextures: Partial<BlockTextureSides> = {};
+
+        for(const t in this.t) newTextures[t] = this.t[t].clone();
+
+        return new ScalableTexture(newTextures as BlockTextureSides);
+    }
+
+    scaleWidth(m: number): void {
+        this.isScaled = true;
+        this.t.bottom.repeat.x = m;
+        this.t.back.repeat.x = m;
+        this.t.left.repeat.x = m;
+        this.t.top.repeat.x = m;
+    }
+
+    scaleHeight(m: number): void {
+        this.isScaled = true;
+        this.t.bottom.repeat.y = m;
+        this.t.back.repeat.y = m;
+        this.t.top.repeat.y = m;
+        this.t.right.repeat.y = m;
+    }
+
+    scaleDepth(m: number): void {
+        this.isScaled = true;
+        this.t.top.repeat.y = m;
+        this.t.right.repeat.x = m;
+        this.t.left.repeat.x = m;
+        this.t.front.repeat.x = m;
+    }
+
+    getArray(f: (t: Texture) => Material): MaterialSidesArray {
+        const o: {[sideName: string]: Material} = {};
+        for(const t in this.t) o[t] = (f(this.t[t]));
+
+        return [o.left, o.front, o.top, o.right, o.back, o.bottom] as MaterialSidesArray;
+    }
+
+    destroy(): void {
+        if(!this.isScaled) throw new Error(
+            "parser-class.ts: "
+        +   "1x1x1 blocks can't be destroyed"
+        );
+
+        for(const t in this.t) {
+            this.t[t].dispose();
+            this.t[t] = undefined!;
+        }
     }
 }

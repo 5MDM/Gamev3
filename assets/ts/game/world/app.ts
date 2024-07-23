@@ -8,6 +8,8 @@ export const app = new WebGLRenderer({
     powerPreference: "high-performance",
 });
 
+app.setPixelRatio(devicePixelRatio);
+
 if(!gameState.devMode) app.debug.checkShaderErrors = false;
 
 app.shadowMap.autoUpdate = false;

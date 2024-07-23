@@ -6,7 +6,7 @@ import { WorkerMessageType, WorkerMessageInterface } from "./assets/ts/game/work
 import { Box } from "./assets/ts/framework/greedy-mesh";
 
 const greedyMesh = new GreedyMesh(postMessage);
-const CHUNK_SIZE = 8;
+const CHUNK_SIZE = 64;
 
 const noise = createNoise2D(() => 0);
 function getRandomElevation(pos: Vector2): number {
