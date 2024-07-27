@@ -4,8 +4,8 @@ import { currentScene } from "../game/world/app";
 import { createNoise2D } from "simplex-noise";
 import { Block, BlockType } from "./block";
 import { Map3D } from "./map";
-import { WorkerMessageInterface, WorkerMessageType } from "../game/worker-enum";
 import { Box, iterateGreedyMesh } from "./greedy-mesh";
+import { generateBlocks } from "./world-gen";
 /*
 const noise = createNoise2D();
 function getRandomElevation(pos: Vector2): number {
@@ -16,10 +16,6 @@ function getRandomElevation(pos: Vector2): number {
     return Math.floor(smooth(0.1) * 2) / 2 + 1;
 }
 */
-var worker: Worker;
-export function setWorker(e: Worker) {
-    worker = e;
-}
 
 export interface ChunkOpts {
     chunkPos: Vector3;
@@ -28,158 +24,87 @@ export interface ChunkOpts {
 }
 
 export class Chunk {
+    maxX: number;
+    minX: number;
+
     step: number = 0.5;
     seed: number;
     octree: Octree;
     hasPhysics: boolean = false;
     chunkPos: Vector3;
     CHUNK_SIZE: number;
-    map: Map3D<BlockType> = new Map3D();
+    CHUNK_SIZE_H: number;
+    map: Map3D<string> = new Map3D();
     blockList: Block[] = [];
-    workerListener?: (e: MessageEvent<WorkerMessageInterface>) => void;
 
     constructor(o: ChunkOpts) {
         this.seed = o.seed;
         this.octree = new Octree(o.chunkPos, o.CHUNK_SIZE);
         this.chunkPos = o.chunkPos;
+        this.minX = this.chunkPos.y;
+        this.maxX = this.chunkPos.y;
         this.CHUNK_SIZE = o.CHUNK_SIZE;
+        this.CHUNK_SIZE_H = o.CHUNK_SIZE / 2;
 
-        /*this.loopGrid(pos => {
-            const elevation = getRandomElevation(pos);
-            const type = Math.floor(Math.random() * 2);
-            const newPos = new Vector3(pos.x, o.chunkPos.y * this.CHUNK_SIZE + elevation, pos.y);
-            const block = new Block({
-                pos: newPos,
-                type,
-            });
-            this.map.set(newPos, type);
-            this.blockList.push(block);
-            //block.init(this.map);
-            //block.addToScene(currentScene);
-
-            return block;
-        });*/
-
-        this.#initWorkerListener();
-
-        /*for(const block of this.blockList) {
-            block.init(this.map);
-            block.addToScene(currentScene);
-        }*/
+        this.#init();
     }
 
-    #initBlocks(block: Box): void {
-        const pos = new Vector3(block.pos.x, block.pos.y, block.pos.z);
+    #init() {
+        const boxArray: Box[] = generateBlocks(this.chunkPos);
 
-        /*
-        if(block.isGreedyMeshed) {
-            const voxel = new Block({
-                pos,
-                type: block.type,
-                greedyMesh: {
-                    width: block.width,
-                    height: block.height,
-                    depth: block.depth,
-                },
-            });
+        if (boxArray == undefined) return;
 
-            for(let x = block.pos.x; x <= block.pos.x + block.width; x++) {
-                for(let y = block.pos.y; y <= block.pos.y + block.height - 1; y += this.step) {
-                    for(let z = block.pos.z; z <= block.pos.z + block.depth; z++) {
-                        const pos = new Vector3(x, y, z);
-
-                        if(pos.x == -2
-                        && pos.y == 0.5
-                        && pos.z == -3) console.log(block);
-
-                        if(this.map.get(pos) != undefined) {
-                            throw new Error(
-                                "chunk.ts: "
-                             +  `position (${x}, ${y}, ${z}) already has a block of type "${BlockType[block.type]}"`
-                            );
-                        }
-
-                        this.map.set(pos, block.type);
-                    }
-                }
-            }
-
-            return voxel;
-
-        } else {
-            const voxel = new Block({
-                pos,
-                type: block.type,
-            });
-
-            if(this.map.get(pos) != undefined) throw new Error(
+        iterateGreedyMesh(boxArray, 0.5, box => {
+            const pos = new Vector3(box.pos.x, box.pos.y, box.pos.z);
+            /*if(self.map.get(pos) != undefined) throw new Error(
                 "chunk.ts: "
-            +   `yk`
-            );
-            this.map.set(pos, block.type);
+            +   `block at (${box.pos.x}, ${box.pos.y}, ${box.pos.z}) is `
+            +   "already filled"
+            );*/
+            this.map.set(pos, box.type);
+        });
 
-            return voxel;
-        }*/
-    }
+        for (const block of boxArray) {
+            const pos = new Vector3(block.pos.x, block.pos.y, block.pos.z);
 
-    #initWorkerListener() {
-        const self = this;
-        this.workerListener = function(e: MessageEvent<WorkerMessageInterface>) {
-            const blockArray: Box[] | undefined = e.data.payload.blockArray as Box[];
-            if(blockArray == undefined) return;
+            if(block.isGreedyMeshed) {
+                pos.add({
+                    x: block.width / 2,
+                    y: block.height / 2,
+                    z: block.depth / 2,
+                });
 
-            iterateGreedyMesh(blockArray, 0.5, box => {
-                const pos = new Vector3(box.pos.x, box.pos.y, box.pos.z);
-                /*if(self.map.get(pos) != undefined) throw new Error(
-                    "chunk.ts: "
-                +   `block at (${box.pos.x}, ${box.pos.y}, ${box.pos.z}) is `
-                +   "already filled"
-                );*/
-                self.map.set(pos, box.type);
-            });
+                pos.sub({
+                    x: this.CHUNK_SIZE_H,
+                    y: 0,
+                    z: this.CHUNK_SIZE_H,
+                });
 
-            for(const block of blockArray) {
-                const pos = new Vector3(block.pos.x, block.pos.y, block.pos.z);
+                const voxelBlock = new Block({
+                    pos,
+                    greedyMesh: {
+                        width: block.width,
+                        height: block.height,
+                        depth: block.depth,
+                    },
+                    type: block.type,
+                });
 
-                if(block.isGreedyMeshed) {
-                    const voxelBlock = new Block({
-                        pos,
-                        greedyMesh: {
-                            width: block.width,
-                            height: block.height,
-                            depth: block.depth,
-                        },
-                        type: block.type,
-                    });
+                this.blockList.push(voxelBlock);
+            } else {
+                const voxelBlock = new Block({
+                    pos,
+                    type: block.type,
+                });
 
-                    self.blockList.push(voxelBlock);
-                } else {
-                    const voxelBlock = new Block({
-                        pos,
-                        type: block.type,
-                    });
-
-                    self.blockList.push(voxelBlock);
-                }
-            }
-
-            
-            worker.removeEventListener("message", this.workerListener!);
-
-            for(const block of self.blockList) {
-                block.init(self.map);
-                block.addToScene(currentScene);
+                this.blockList.push(voxelBlock);
             }
         }
 
-        worker.addEventListener("message", this.workerListener);
-
-        worker.postMessage({
-            type: WorkerMessageType.loadChunk,
-            payload: {
-                chunkPos: this.chunkPos,
-            },
-        });
+        for (const block of this.blockList) {
+            block.init(this.map);
+            block.addToScene(currentScene);
+        }
     }
 
     loopGrid(f: (pos: Vector2) => Block) {
@@ -197,7 +122,7 @@ export class Chunk {
         this.hasPhysics = true;
     }
     
-    delete() {
+    destroy(): void {
         this.octree.delete();
         this.map.destroy();
         for(const {mesh} of this.blockList) {

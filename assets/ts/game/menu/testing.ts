@@ -1,19 +1,21 @@
 import { Vector3 } from "three";
-import { Box, GreedyMesh, iterateGreedyMesh, MapInterface } from "../../framework/greedy-mesh";
+import { Box, GreedyMesh, iterateGreedyMesh, BlockTypesInterface } from "../../framework/greedy-mesh";
 import { Map3D } from "../../framework/map";
 
 export function greedyMeshTest(p: HTMLParagraphElement) {
-    const greedyMesh = new GreedyMesh();
-    const map = new Map3D<boolean>();
-    const maps: MapInterface = {
-        0: map,
+    const greedyMesh = new GreedyMesh({
+        CHUNK_SIZE: 4,
+        yStep: 0.5,
+    });
+
+    const map = new Map3D<true>();
+    const maps: BlockTypesInterface = {
+        Grass: map,
     };
 
     function fill(x: number, y: number, z: number): void {
         map.set(new Vector3(x, y, z), true);
     }
-
-    fill(0, 0, 0);
 
     /*
     fill(1, 0, 0);
@@ -46,18 +48,10 @@ export function greedyMeshTest(p: HTMLParagraphElement) {
     fill(3, 3, 3);
     fill(3, 2, 3);
 
-    const blocks: Box[] = greedyMesh.greedyMesh({
-        CHUNK_SIZE: 4,
-        yStep: 1,
-        chunkPos: new Vector3(0, 0, 0),
-        maps,
-        minY: 0,
-        maxY: 4,
-        center: false,
-    });
+    const blocks: Box[] = greedyMesh.greedyMesh(new Vector3(0, 0, 0), maps);
 
     iterateGreedyMesh(blocks, 0.5, box => {
-        console.log(box);
+        //console.log(box);
     });
 
     const firstBlock = blocks[0];

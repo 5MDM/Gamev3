@@ -1,295 +1,29 @@
-import { WorkerMessageType } from "../game/worker-enum";
 import { Block, BlockType } from "./block";
 import { Map3D, Map2D } from "./map";
 import { Vector2, Vector3 } from "three";
 
-export interface MapInterface {
-    [index: string]: Map3D<boolean>;
+export interface BlockTypesInterface {
+    [blockName: string]: Map3D<true>;
 }
 
 export interface GreedyMeshInterface {
-    CHUNK_SIZE: number;
     chunkPos: Vector3;
-    yStep: number;
-    maps: MapInterface;
-    minY: number;
-    maxY: number;
-    center: boolean;
+    maps: BlockTypesInterface;
 }
 
-interface BoundsInterface {
-    max: Vector3;
-    min: Vector3;
-}
-
-interface IndividualMeshInterface {
-    yStep: number;
-    bounds: BoundsInterface;
-    boxArray: Box[];
-    type: number;
-    maps: MapInterface;
-    center: boolean;
-    halfChunk: number;
+interface XYZ {
+    x: number;
+    y: number;
+    z: number;
 }
 
 export interface Box {
-    pos: {
-        x: number;
-        y: number;
-        z: number;
-    };
+    pos: XYZ;
     width: number;
     height: number;
     depth: number;
-    type: number;
+    type: string;
     isGreedyMeshed: boolean;
-}
-
-interface zSliceInterface {
-    x: number;
-    y: number;
-    minZ: number;
-    maxZ: number;
-}
-
-interface MergeMeshInterface {
-    pos: Vector3;
-    maxBounds: Vector3;
-    map: Map3D<boolean>;
-    yStep: number;
-    type: number;
-    center: boolean;
-    halfChunk: number;
-}
-
-export class GreedyMesh {
-    log: (e: any) => void;
-
-    constructor(postMessage?: (message: any) => void) {
-        this.log = function(e: any) {
-            postMessage?.({
-                type: WorkerMessageType.log,
-                payload: e,
-            });
-        };
-    }
-
-    #calculateXZBounds(chunkPos: Vector3, CHUNK_SIZE: number): BoundsInterface {
-        const min = new Vector3(
-            chunkPos.x * CHUNK_SIZE,
-            0,
-            chunkPos.z * CHUNK_SIZE,
-        );
-        
-        const max = new Vector3(
-            min.x + CHUNK_SIZE,
-            0,
-            min.z + CHUNK_SIZE,
-        );
-
-        return {min, max};
-    }
-
-    greedyMesh(o: GreedyMeshInterface): Box[] {
-        const bounds: BoundsInterface = this.#calculateXZBounds(o.chunkPos, o.CHUNK_SIZE);
-        const boxArray: Box[] = [];
-
-        const half = o.CHUNK_SIZE / 2;
-        if(o.center) {
-            bounds.min.x -= half;
-            bounds.min.z -= half;
-            bounds.max.x -= half;
-            bounds.max.z -= half;
-        }
-
-        bounds.max.y = o.maxY;
-        bounds.min.y = o.minY;
-        if(bounds.max.y == bounds.min.y) throw new Error(
-            "greedy-mesh.ts: "
-        +   `max Y and min Y can't be the same (both values are: ${bounds.max.y})`
-        );
-
-        for(const type in o.maps) {
-            const boxes = this.#individualMesh({
-                yStep: o.yStep,
-                bounds,
-                boxArray,
-                type: Number(type),
-                maps: o.maps,
-                center: o.center,
-                halfChunk: half,
-            });
-
-            boxArray.push(...boxes);
-        }
-
-        return boxArray;
-    }
-
-    #individualMesh(o: IndividualMeshInterface): Box[] {
-        var time = 1;
-        const boxArray: Box[] = [];
-
-        for(let z = o.bounds.min.z; z <= o.bounds.max.z; z++) {
-
-            // o.bounds.min.y and o.bounds.max.y are both 0
-            for(let y = o.bounds.min.y; y <= o.bounds.max.y; y += o.yStep) {
-
-                for (let x = o.bounds.min.x; x <= o.bounds.max.x; x++) {
-
-                    const pos = new Vector3(x, y, z);
-                    const block = o.maps[o.type].get(pos);
-                    if(block == undefined) continue;
-
-                    // block found
-                    const box: Box = this.#mergeMesh({
-                        pos,
-                        maxBounds: o.bounds.max,
-                        map: o.maps[o.type],
-                        yStep: o.yStep,
-                        type: o.type,
-                        center: o.center,
-                        halfChunk: o.halfChunk,
-                    });
-
-                    boxArray.push(box);
-                }
-            }
-        }
-
-        return boxArray;
-    }
-
-    #mergeMesh(o: MergeMeshInterface): Box {
-        const maxBounds = {
-            x: o.maxBounds.x,
-            y: o.maxBounds.y,
-            z: o.maxBounds.z,
-        };
-
-        function iterateDimension(type: "x" | "y" | "z", f: (d: number, end: () => void) => void) {
-            var hasEnded = false;
-            function end() {
-                hasEnded = true
-            }
-
-            var d = o.pos[type];
-            const max = maxBounds[type];
-
-            if(type == "y") {
-                for( ; d <= max; d += o.yStep) {
-                    f(d, end);
-
-                    if(hasEnded) return;
-                }
-            } else {
-                for( ; d <= max; d++) {
-                    f(d, end);
-
-                    if(hasEnded) return;
-                }
-            }
-        }
-
-        const box: Box = {
-            pos: o.pos.clone(),
-            width: o.pos.x + 1,
-            height: o.pos.y + 1,
-            depth: o.pos.z + 1,
-            type: BlockType.grass,
-            isGreedyMeshed: false,
-        };
-        
-        const cursor = new Vector3(box.pos.x, box.pos.y, box.pos.z);
-        const firstYLayer = box.pos.y;
-        const firstZLayer = box.pos.z;
-
-        iterateDimension("x", (x, end) => {
-            cursor.x = x;
-            const block = o.map.get(cursor);
-
-            box.width = x;
-            if(block == undefined) return end();
-            box.isGreedyMeshed = true;
-
-            o.map.remove(cursor);
-        });
-
-        maxBounds.x = box.width-1;
-
-        iterateDimension("y", (y, endY) => {
-            if(y == firstYLayer) return;
-            var hasEnded: boolean = false;
-            cursor.y = y;
-
-            const toBeRemoved: Vector3[] = [];
-            iterateDimension("x", (x, endX) => {
-                cursor.x = x;
-                const block = o.map.get(cursor);
-
-                if(block == undefined) {
-                    hasEnded = true;
-                    return endX();
-                }
-
-                toBeRemoved.push(cursor.clone());
-            });
-
-            box.height = y;
-            if(hasEnded) return endY();
-            box.isGreedyMeshed = true;
-
-            for(const pos of toBeRemoved) o.map.remove(pos);
-        });
-
-        maxBounds.y = box.height-o.yStep;
-
-        iterateDimension("z", (z, endZ) => {
-            if(z == firstZLayer) return;
-            var hasEnded = false;
-
-            cursor.z = z;
-
-            const toBeRemoved: Vector3[] = [];
-            iterateDimension("y", (y, endY) => {
-
-                cursor.y = y;
-
-                iterateDimension("x", (x, endX) => {
-
-                    cursor.x = x;
-                    const block = o.map.get(cursor);
-
-                    if(block == undefined) {
-                        hasEnded = true;
-                        endY();
-                        return endX();
-                    }
-
-                    toBeRemoved.push(cursor.clone());
-                });
-
-            });
-
-            box.depth = z;
-            if(hasEnded) return endZ();
-            box.isGreedyMeshed = true;
-
-            for(const pos of toBeRemoved) o.map.remove(pos);
-        });
-        // width, height, depth is max
-        // o.pos is min
-
-        box.width -= o.pos.x;
-        box.height -= o.pos.y;
-        box.depth -= o.pos.z;
-
-        if(box.width <= 0) box.width = 1;
-        if(box.height <= 0) box.height = 1;
-        if(box.depth <= 0) box.depth = 1;
-
-        return box;
-    }
 }
 
 export function iterateGreedyMesh(blocks: Box[], yStep: number, f: (box: Box) => void) {
@@ -316,5 +50,222 @@ export function iterateGreedyMesh(blocks: Box[], yStep: number, f: (box: Box) =>
         } else {
             f(block);
         }
+    }
+}
+
+interface GreedyMeshInit {
+    CHUNK_SIZE: number;
+    yStep: number;
+}
+
+interface MergeMeshOpts {
+    readonly pos: Vector3;
+    readonly max: Readonly<XYZ>;
+    readonly min: Readonly<XYZ>;
+    readonly type: string;
+    blockMap: Map3D<true>;
+}
+
+// i, j, k are chunk relative positions
+
+export class GreedyMesh {
+    CHUNK_SIZE: number;
+    CHUNK_SIZE_SQUARED: number;
+    CHUNK_SIZE_CUBED: number;
+    CHUNK_SIZE_I: number;
+    yStep: number;
+
+    constructor(o: GreedyMeshInit) {
+        this.CHUNK_SIZE = o.CHUNK_SIZE;
+        this.CHUNK_SIZE_I = this.CHUNK_SIZE-1;
+        this.CHUNK_SIZE_SQUARED = this.CHUNK_SIZE ** 2;
+        this.CHUNK_SIZE_CUBED = this.CHUNK_SIZE ** 3;
+        this.yStep = o.yStep;
+    }
+
+    greedyMesh(chunkPos: Vector3, blockTypes: BlockTypesInterface, minY?: number, maxY?: number): Box[] {
+        minY ||= chunkPos.y * this.CHUNK_SIZE;
+        maxY ||= minY + this.CHUNK_SIZE_I;
+
+        const minZ = chunkPos.z * this.CHUNK_SIZE;
+        const maxZ = minZ + this.CHUNK_SIZE_I;
+
+        const minX = chunkPos.x * this.CHUNK_SIZE;
+        const maxX = minX + this.CHUNK_SIZE_I;
+
+        const blocks: Box[] = [];
+
+        for(const blockName in blockTypes) {
+            const blockMap: Map3D<true> = blockTypes[blockName];
+
+            for(let z = minZ; z <= maxZ; z++) {
+                for(let y = minY; y <= maxY; y += this.yStep) {
+                    for(let x = minX; x <= maxX; x++) {
+                        const pos = new Vector3(x, y, z);
+                        const block: true | undefined = blockMap.get(pos);
+
+                        if(block == undefined) continue;
+                        const mergedBlock: Box = this.#mergeMesh({
+                            pos,
+                            type: "Grass",
+                            blockMap,
+                            min: {
+                                x: pos.x,
+                                y: pos.y,
+                                z: pos.z,
+                            },
+                            max: {
+                                x: maxX,
+                                y: maxY,
+                                z: maxZ,
+                            },
+                        });
+
+                        blocks.push(mergedBlock);
+                    }
+                }
+            }
+        }
+
+        return blocks;
+    }
+
+    #mergeMesh(o: Readonly<MergeMeshOpts>): Box {
+        const min: XYZ = {
+            x: o.min.x,
+            y: o.min.y,
+            z: o.min.z,
+        };
+
+        const max: XYZ = {
+            x: o.max.x,
+            y: o.max.y,
+            z: o.max.z,
+        };
+
+        function checkNegative(n: number, type: "width" | "height" | "depth"): void | never {
+            if(n <= 0) throw new Error(
+                "greedy-mesh.ts: "
+            +   `${type} is negative or 0. Here's the value: ${n}. Debug: ${min.x}, ${max.x}`
+            );
+        }
+
+        function iterate(type: "x" | "y" | "z", f: (d: number, end: () => void) => void) {
+            const min2 = min[type];
+            const max2 = max[type];
+
+            var hasEnded: boolean = false;
+            function end(): void {
+                hasEnded = true;
+            }
+
+            for(let i = min2; i <= max2; i++) {
+                f(i, end);
+                if(hasEnded) return;
+            }
+        }
+
+        const box: Partial<Box> = {
+            width: 1,
+            height: 1,
+            depth: 1,
+            isGreedyMeshed: true,
+        };
+
+        const cursor = new Vector3(o.min.x, o.min.y, o.min.z);
+        const firstYLayer = cursor.y;
+        const firstXLayer = cursor.x;
+
+        iterate("z", (z: number, end: () => void) => {
+            cursor.z = z;
+
+            const block: boolean | undefined = o.blockMap.get(cursor);
+
+            if(!block) return end();
+
+            max.z = z;
+            o.blockMap.remove(cursor);
+        });
+
+        box.depth = max.z - min.z + 1;
+
+        checkNegative(box.depth, "depth");
+
+        iterate("y", (y, endY) => {
+            if(y == firstYLayer) return;
+
+            const blocksToRemove: Vector3[] = [];
+            var hasEnded: boolean = false;
+
+            cursor.y = y;
+
+            iterate("z", (z, endZ) => {
+                cursor.z = z;
+
+                const block: boolean | undefined = o.blockMap.get(cursor);
+                if(!block) {
+                    hasEnded = true;
+                    return endZ();
+                }
+
+                blocksToRemove.push(cursor.clone());
+            });
+
+            if(hasEnded) return endY();
+
+            max.y = y;
+            for(const vectors of blocksToRemove) o.blockMap.remove(vectors);
+        });
+
+        box.height = max.y - min.y + 1;
+        checkNegative(box.height, "height");
+
+        iterate("x", (x, endX) => {
+            if(x == firstXLayer) return;
+            const blocksToRemove: Vector3[] = [];
+            var hasEnded: boolean = false;
+
+            cursor.x = x;
+            max.x = x;
+
+            iterate("y", (y, endY) => {
+                cursor.y = y;
+
+                iterate("z", (z, endZ) => {
+                    cursor.z = z;
+
+                    const block: true | undefined = o.blockMap.get(cursor);
+                    if(!block) {
+                        hasEnded = true;
+                        endY();
+                        endZ();
+                        return;
+                    }
+
+                    blocksToRemove.push(cursor.clone());
+                });
+            });
+
+            if(hasEnded) return endX();
+
+            max.x = x;
+            for(const vectors of blocksToRemove) o.blockMap.remove(vectors);
+        });
+
+        box.width = max.x - min.x + 1;
+        checkNegative(box.width, "width");
+
+        box.pos = {
+            x: o.pos.x,
+            y: o.pos.y,
+            z: o.pos.z,
+        } as XYZ;
+
+        box.type = o.type;
+        if(box.width == 1
+        && box.height == 1
+        && box.depth == 1) box.isGreedyMeshed = false;
+
+        return box as Box;
     }
 }

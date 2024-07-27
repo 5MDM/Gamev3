@@ -2,10 +2,9 @@ import { BoxGeometry, CanvasTexture, Mesh, MeshBasicMaterial, SRGBColorSpace, Sc
 import { World } from "../../framework/world";
 import { renderLoop, setScene } from "./app";
 import { $ } from "../../framework/util";
-import { worker } from "../worker";
-import { setWorker } from "../../framework/chunk";
 import "./camera";
 import { mods } from "../parser/parser";
+import { initWorldGen, setBiomesFromMods } from "../../framework/world-gen";
 
 // decrease for pixelation
 const IMAGE_SIZE = 32;
@@ -13,7 +12,8 @@ export const CHUNK_SIZE = 64;
 
 const scene = new Scene();
 setScene(scene);
-setWorker(worker);
+initWorldGen(CHUNK_SIZE);
+setBiomesFromMods(mods);
 
 export async function startGame() {
     const world = new World({

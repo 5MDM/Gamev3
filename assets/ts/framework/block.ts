@@ -97,7 +97,7 @@ interface GreedyMeshSize {
 
 export interface BlockOpts {
     pos: Vector3;
-    type: BlockType;
+    type: string;
     greedyMesh?: GreedyMeshSize;
 }
 
@@ -126,7 +126,7 @@ export enum BlockType {
 
 export class Block {
     yStep: number = 0.5;
-    type: BlockType;
+    type: string;
     isDeleted: boolean = false;
     isGreedyMeshed: boolean = false;
     width: number = 1;
@@ -152,19 +152,18 @@ export class Block {
         }
     }
 
-    init(map: Map3D<BlockType>) {
+    init(map: Map3D<string>) {
         this.isInitialized = true;
 
         const geometry = new BoxGeometry(this.width, this.height, this.depth);
         
-        var t = textures.Grass;
+        var t = textures[this.type];
 
         if(this.isGreedyMeshed) {
             t = t.clone();
             t.scaleWidth(this.width);
             t.scaleHeight(this.height);
             t.scaleDepth(this.depth);
-            console.log(this.width, this.height, this.depth);
         }
 
         this.#UVMap(geometry);
@@ -220,86 +219,6 @@ export class Block {
         }
 
         return [faceWidth, faceHeight];
-    }
-
-    #setGeometry(g: BufferGeometry, pos: Vector3, map: Map3D<BlockType>, disableCulling: boolean): void {
-        const uvs: number[] = [];
-        const normals: number[] = [];
-        const indexes: number[] = [];
-        const positions: number[] = [];
-
-        /*for(const {dir, corners, uvRow} of faces) {
-            const neighbor = this.voxelFaceMap.get(
-              pos.x + dir[0],
-              pos.y + dir[1],
-              pos.z + dir[2],
-            );
-
-            if(neighbor == undefined) {
-              // make face
-              const ndx = positions.length / 3;
-              for(const p of corners) {
-                positions.push(
-                  p.pos[0] + pos.x, 
-                  p.pos[1] + pos.y,
-                  p.pos[2] + pos.z,
-                );
-                normals.push(...dir);
-                
-                uvs.push(
-                  (uvVoxel + p.uv[0]) * this.tileWidthRatio,
-                  1 - (uvRow + 1 - p.uv[1]) * this.tileHeightRatio,
-                );
-              }
-              
-              indices.push(
-                ndx    , ndx + 1, ndx + 2,
-                ndx + 2, ndx + 1, ndx + 3,
-              );   
-            }
-          }*/
-        const size = 1;
-        for (const { corners, uvRow, dir } of faces) {
-            /*const neighbor = map.get(new Vector3(
-                pos.x + dir[0],
-                pos.y + dir[1],
-                pos.z + dir[2],
-            ));
-            
-            if(neighbor != undefined) continue;*/
-
-            const ndx = positions.length / 3;
-            for (const p of corners) {
-                positions.push(
-                    p.pos[0] + pos.x + (this.width),
-                    p.pos[1] + pos.y + (this.height),
-                    p.pos[2] + pos.z + (this.depth),
-                );
-
-                uvs.push(
-                    (this.type + p.uv[0]) * tileWidthRatio,
-                    1 - (uvRow + 1 - p.uv[1]) * tileHeightRatio,
-                );
-
-                normals.push(...dir);
-            }
-
-
-            indexes.push(
-                ndx, ndx + 1, ndx + 2,
-                ndx + 2, ndx + 1, ndx + 3,
-            );
-        }
-
-        /*g.setAttribute(
-            "position",
-            new BufferAttribute(new Float32Array(positions), 3),
-        );
-        g.setAttribute("normal",
-            new BufferAttribute(new Float32Array(normals), 3),
-        );*/
-        g.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2));
-        //g.setIndex(indexes);
     }
 
     addToScene(scene: Scene) {

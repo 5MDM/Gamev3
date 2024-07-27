@@ -1,4 +1,9 @@
 import { CubeRefractionMapping, CubeTexture, CubeTextureLoader, Material, NearestFilter, NearestMipmapNearestFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from "three";
+import { Biome } from "../../framework/world-gen";
+
+var modsLoadedRes: () => void;
+export const modsLoadedPr = new Promise<void>(res => modsLoadedRes = res);
+export const biomeList: Biome[] = [];
 
 export interface BlockTextureMap {
     [blockName: string]: ScalableTexture;
@@ -6,14 +11,16 @@ export interface BlockTextureMap {
 
 type MaterialSidesArray = [Material, Material, Material, Material, Material, Material];
 
-interface BlockTextureSides {
-    [sideName: string]: Texture;
-    top: Texture;
+type BlockSideType = "top" | "bottom" | "left" | "right" | "front" | "back";
+
+type BlockTextureSides = {
+    [key in BlockSideType]: Texture;
+    /*top: Texture;
     bottom: Texture;
     left: Texture;
     right: Texture;
     front: Texture;
-    back: Texture;
+    back: Texture;*/
 }
 
 const mods: {[index: string]: Mod} = {};
@@ -25,7 +32,8 @@ interface InfoInterface {
     content: {
         blocks?: {
             block_size: number;
-        } 
+        },
+        biomes: {},
     }
 }
 
@@ -35,12 +43,12 @@ interface ModInterface extends InfoInterface {
 
 interface BlockTextureInterface {
     [index: string]: string | undefined;
-    top?: string;
-    bottom?: string;
-    left?: string;
-    right?: string;
-    front?: string;
-    back?: string;
+    top: string;
+    bottom: string;
+    left: string;
+    right: string;
+    front: string;
+    back: string;
 }
 
 interface BlockInterface {
@@ -106,7 +114,10 @@ export class ModParser {
 
         Promise
         .all(promises)
-        .then(() => callback());
+        .then(() => {
+            callback();
+            modsLoadedRes();
+        });
     }
 
     parseAllMods(): Promise<{[modName: string]: Mod}> {
@@ -147,7 +158,31 @@ export class ModParser {
             mod.initBlocks(blocks);
         }
 
+        if(o.content.biomes) {
+            const biomes: Biome[] = await this.#parseBiomes(o);
+            mod.initBiomes(biomes);
+        }
+
         return mod;
+    }
+
+    async #parseBiomes(o: ModInterface): Promise<Biome[]> {
+        const im: any = await import(`../../../mods/${o.name}/biomes.ts`);
+
+        if(typeof im.generateBiomeList != "function") throw new Error(
+            "parser-class.ts: "
+        +   `"biomes.ts" file in mod "${o.name}" doesn't export "generateBiomeList()" function`
+        );
+
+        const blocks: unknown | Biome[] = im.generateBiomeList();
+
+        if(!Array.isArray(blocks)) throw new Error(
+            "parser-class.ts: "
+        +   `Error with mod "${o.name}". The exported function "generateBiomeList()" did not return an array. `
+        +   `It instead returned "${blocks}" with type of "${typeof blocks}`
+        );
+
+        return blocks;
     }
 
     async #parseBlocks(o: ModInterface): Promise<BlockTextureMap> {
@@ -163,6 +198,8 @@ export class ModParser {
     }
 
     async #parseSingularBlock(path: string, block: BlockInterface): Promise<ScalableTexture> {
+        block.texture ||= "";
+
         const textures: BlockTextureInterface = {
             top: block.textures?.top || block.texture,
             bottom: block.textures?.bottom || block.texture,
@@ -182,24 +219,30 @@ export class ModParser {
             textures[texture] = this.memory[path + textures[texture]];
         }
 
-        const st = new ScalableTexture({
-            top: await ld(textures.top!),
-            bottom: await ld(textures.bottom!),
-            left: await ld(textures.left!),
-            right: await ld(textures.right!),
-            front: await ld(textures.front!),
-            back: await ld(textures.back!),
-        });
+        const stOpts: {[val in BlockSideType]?: Texture} = {};
+
+        const map: {[path: string]: Texture} = {};
+
+        for(const key in textures) {
+            const val = textures[key as BlockSideType];
+
+            if(map[val] == undefined) map[val] = await ld(val);
+            stOpts[key as BlockSideType] = map[val];
+        }
+
+        const st = new ScalableTexture(stOpts as {[val in BlockSideType]: Texture});
 
         return st;
     }
 }
 
-class Mod {
+export class Mod {
     name: string = "Unknown Mod";
     namespace: string = "";
     description: string = "No description";
     isFinalized: boolean = false;
+
+    biomes: Biome[] = [];
 
     hasContent: {[index: string]: boolean} = {};
 
@@ -223,9 +266,16 @@ class Mod {
         this.hasContent.blocks = true;
         this.blocks = blocks;
     }
+
+    initBiomes(recievedBiomes: Biome[]): void {
+        this.biomes = recievedBiomes;
+        biomeList.push(...recievedBiomes);
+    }
 }
 
-// bottom is front
+export interface ModList {
+    [modName: string]: Mod;
+}
 
 export class ScalableTexture {
     t: BlockTextureSides;
@@ -233,16 +283,17 @@ export class ScalableTexture {
 
     constructor(o: BlockTextureSides) {
         this.t = o;
+        //for(const e in o) console.log(o[e as BlockSideType].uuid);
     }
 
     iterateTextures(f: (t: Texture) => void) {
-        for(const name in this.t) f(this.t[name]);
+        for(const name in this.t) f(this.t[name as BlockSideType]);
     }
 
     clone(): ScalableTexture {
         const newTextures: Partial<BlockTextureSides> = {};
 
-        for(const t in this.t) newTextures[t] = this.t[t].clone();
+        for(const t in this.t) newTextures[t as BlockSideType] = this.t[t as BlockSideType].clone();
 
         return new ScalableTexture(newTextures as BlockTextureSides);
     }
@@ -273,7 +324,7 @@ export class ScalableTexture {
 
     getArray(f: (t: Texture) => Material): MaterialSidesArray {
         const o: {[sideName: string]: Material} = {};
-        for(const t in this.t) o[t] = (f(this.t[t]));
+        for(const t in this.t) o[t] = (f(this.t[t as BlockSideType]));
 
         return [o.left, o.front, o.top, o.right, o.back, o.bottom] as MaterialSidesArray;
     }
@@ -285,8 +336,8 @@ export class ScalableTexture {
         );
 
         for(const t in this.t) {
-            this.t[t].dispose();
-            this.t[t] = undefined!;
+            this.t[t as BlockSideType].dispose();
+            this.t[t as BlockSideType] = undefined!;
         }
     }
 }
