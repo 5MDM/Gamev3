@@ -1,18 +1,20 @@
 import { PerspectiveCamera } from "three";
 import { setCamera } from "./app";
-import { ControlCamera } from "../../framework/camera";
+import { ControlCamera, MovementCamera } from "../../framework/camera";
 import { $, clamp } from "../../framework/util";
 
 export const camera = new PerspectiveCamera(90, innerWidth / innerHeight, 0.1, 5 * 1000);
 camera.position.y = 10;
 setCamera(camera);
 
-export const controlCam = new ControlCamera({
+export const controlCam = new MovementCamera({
     threeCamera: camera,
     canvas: $("#c") as HTMLCanvasElement,
     defaultXRotation: -1.570796,
     defaultYRotation: 0,
 });
+
+controlCam.enableMoveForward();
 
 controlCam.onTouchMove = function(x: number, y: number) {
     controlCam.rx += x * 0.01;

@@ -1,5 +1,6 @@
 import { CubeRefractionMapping, CubeTexture, CubeTextureLoader, Material, NearestFilter, NearestMipmapNearestFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from "three";
 import { Biome } from "../../framework/world-gen";
+import { isModuleReference, ModuleKind } from "typescript";
 
 var modsLoadedRes: () => void;
 export const modsLoadedPr = new Promise<void>(res => modsLoadedRes = res);
@@ -94,7 +95,15 @@ export class ModParser {
             const pr = this.modPath[key]();
             prArray.push(pr);
 
-            pr.then(e => this.memory[key] = e.default);
+            pr.then(e => {
+                this.memory[key] = e.default;
+                
+                const extension = key.substring(key.lastIndexOf('.') + 1);
+                if(extension == "js"
+                || extension == "ts") {
+                    this.memory[key] = e;
+                }
+            });
         }
 
         Promise.all(prArray)
@@ -167,14 +176,12 @@ export class ModParser {
     }
 
     async #parseBiomes(o: ModInterface): Promise<Biome[]> {
-        const im: any = await import(`../../../mods/${o.name}/biomes.ts`);
-
-        if(typeof im.generateBiomeList != "function") throw new Error(
+        if(typeof this.memory[o.path + "biomes.ts"].generateBiomeList != "function") throw new Error(
             "parser-class.ts: "
         +   `"biomes.ts" file in mod "${o.name}" doesn't export "generateBiomeList()" function`
         );
 
-        const blocks: unknown | Biome[] = im.generateBiomeList();
+        const blocks: unknown | Biome[] = this.memory[o.path + "biomes.ts"].generateBiomeList();
 
         if(!Array.isArray(blocks)) throw new Error(
             "parser-class.ts: "

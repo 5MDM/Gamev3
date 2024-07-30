@@ -105,3 +105,64 @@ export class ControlCamera {
         this.threeCamera.quaternion.copy(fullRot);
     }
 }
+
+interface MovementQueueInterface {
+    type: string;
+    vector: Vector3;
+}
+
+export class MovementCamera extends ControlCamera {
+    #direction: Vector3 = new Vector3();
+
+    moving;
+
+    forwardSpeed: number = 0.1;
+
+    constructor(o: ControlCameraOpts) {
+        super(o);
+
+        this.moving = {
+            forward: false,
+            backwards: false,
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+        };
+        this.#loop();
+    }
+
+    #loop() {
+        const self = this;
+
+        function ticker() {
+            if(self.moving.forward) self.#moveForward();
+
+            requestAnimationFrame(ticker);
+        }
+
+        ticker();
+    }
+
+    #moveForward(): void {
+        this.threeCamera.getWorldDirection(this.#direction);
+        this.#direction.y = 0;
+        this.#direction.normalize();
+        this.#direction.multiplyScalar(this.forwardSpeed);
+        this.threeCamera.position.add(this.#direction);
+    }
+
+    enableMoveForward():    void {this.moving.forward = true}
+    enableMoveBackwards():  void {this.moving.backwards = true}
+    enableMoveLeft():       void {this.moving.left = true}
+    enableMoveRight():      void {this.moving.right = true}
+    enableMoveUp():         void {this.moving.up = true}
+    enableMoveDown():       void {this.moving.down = true}
+}
+
+/*
+const e = new MovementCamera();
+
+event("pointerdown", () => e.enableMoveForward());
+event("pointerup", () => e.disableMoveForward());
+conso*/
