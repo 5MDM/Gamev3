@@ -1,6 +1,6 @@
 import { Vector2, Vector3 } from "three";
-import { BlockTypesInterface } from "../../ts/framework/greedy-mesh";
-import { BaseChunkGenerator, Biome, BiomeGenFunctionOutput, getRandomElevation } from "../../ts/framework/world-gen";
+import { BaseChunkGenerator, getRandomElevation } from "../../ts/framework/world-gen";
+import { biomeMap } from "../../ts/game/parser/global-mods";
 
 class GrassLand extends BaseChunkGenerator {
     generate() {
@@ -15,11 +15,9 @@ class GrassLand extends BaseChunkGenerator {
     }
 }
 
-export function generateBiomeList(): Biome[] {
-    return [
-        {
-            name: "Grass Land",
-            generate: chunkPos => new GrassLand(chunkPos),
-        }
-    ];
-}
+biomeMap.Gamev3 = [];
+
+biomeMap.Gamev3.push({
+    name: "Grasslands",
+    generate: chunkPos => new GrassLand(chunkPos),
+});

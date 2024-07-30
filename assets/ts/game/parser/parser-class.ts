@@ -1,10 +1,9 @@
-import { CubeRefractionMapping, CubeTexture, CubeTextureLoader, Material, NearestFilter, NearestMipmapNearestFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from "three";
-import { Biome } from "../../framework/world-gen";
-import { isModuleReference, ModuleKind } from "typescript";
+import { CubeRefractionMapping, Material, NearestFilter, NearestMipmapNearestFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from "three";
+import { Biome, biomeMap, biomeList } from "./global-mods";
+import "../../../mods/main";
 
 var modsLoadedRes: () => void;
 export const modsLoadedPr = new Promise<void>(res => modsLoadedRes = res);
-export const biomeList: Biome[] = [];
 
 export interface BlockTextureMap {
     [blockName: string]: ScalableTexture;
@@ -168,28 +167,22 @@ export class ModParser {
         }
 
         if(o.content.biomes) {
-            const biomes: Biome[] = await this.#parseBiomes(o);
+            const biomes: Biome[] = this.#parseBiomes(o);
             mod.initBiomes(biomes);
         }
 
         return mod;
     }
 
-    async #parseBiomes(o: ModInterface): Promise<Biome[]> {
-        if(typeof this.memory[o.path + "biomes.ts"].generateBiomeList != "function") throw new Error(
+    #parseBiomes(o: ModInterface): Biome[] {
+        console.log(biomeMap);
+        if(!Array.isArray(biomeMap[o.name])) throw new Error(
             "parser-class.ts: "
-        +   `"biomes.ts" file in mod "${o.name}" doesn't export "generateBiomeList()" function`
+        +   `Mod "${o.name}" gave something that wasn't an array in the biome map. `
+        +   `The recieved thing was "${biomeMap[o.name]}"`
         );
 
-        const blocks: unknown | Biome[] = this.memory[o.path + "biomes.ts"].generateBiomeList();
-
-        if(!Array.isArray(blocks)) throw new Error(
-            "parser-class.ts: "
-        +   `Error with mod "${o.name}". The exported function "generateBiomeList()" did not return an array. `
-        +   `It instead returned "${blocks}" with type of "${typeof blocks}`
-        );
-
-        return blocks;
+        return biomeMap[o.name];
     }
 
     async #parseBlocks(o: ModInterface): Promise<BlockTextureMap> {

@@ -1,9 +1,10 @@
 import {createNoise2D} from "simplex-noise";
 import {Vector2, Vector3} from "three";
-import { Mod, ModList, biomeList, modsLoadedPr } from "../game/parser/parser-class";
+import { ModList } from "../game/parser/parser-class";
 import { BlockTypesInterface, Box, GreedyMesh } from "./greedy-mesh";
 import { CHUNK_SIZE } from "../game/world/main";
 import { Map3D } from "./map";
+import { Biome, biomeList } from "../game/parser/global-mods";
 
 export interface BiomeGenFunctionOutput {
     blockTypes: BlockTypesInterface;
@@ -56,11 +57,6 @@ export abstract class BaseChunkGenerator {
     }
 
     protected abstract generate(): void;
-}
-
-export interface Biome {
-    name: string;
-    generate: (pos: Vector3) => BaseChunkGenerator;
 }
 
 function getRndBiome(): Biome {
