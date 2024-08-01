@@ -2,9 +2,8 @@ import {createNoise2D} from "simplex-noise";
 import {Vector2, Vector3} from "three";
 import { ModList } from "../game/parser/parser-class";
 import { BlockTypesInterface, Box, GreedyMesh } from "./greedy-mesh";
-import { CHUNK_SIZE } from "../game/world/main";
 import { Map3D } from "./map";
-import { Biome, biomeList } from "../game/parser/global-mods";
+import { Biome, biomeList, CHUNK_SIZE } from "../game/parser/global";
 
 export interface BiomeGenFunctionOutput {
     blockTypes: BlockTypesInterface;

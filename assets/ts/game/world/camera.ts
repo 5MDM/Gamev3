@@ -2,6 +2,7 @@ import { PerspectiveCamera } from "three";
 import { setCamera } from "./app";
 import { ControlCamera, MovementCamera } from "../../framework/camera";
 import { $, clamp } from "../../framework/util";
+import { bindMovement } from "../controls";
 
 export const camera = new PerspectiveCamera(90, innerWidth / innerHeight, 0.1, 5 * 1000);
 camera.position.y = 10;
@@ -14,7 +15,7 @@ export const controlCam = new MovementCamera({
     defaultYRotation: 0,
 });
 
-controlCam.enableMoveForward();
+bindMovement(controlCam);
 
 controlCam.onTouchMove = function(x: number, y: number) {
     controlCam.rx += x * 0.01;

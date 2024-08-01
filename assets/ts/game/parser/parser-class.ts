@@ -1,5 +1,5 @@
 import { CubeRefractionMapping, Material, NearestFilter, NearestMipmapNearestFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from "three";
-import { Biome, biomeMap, biomeList } from "./global-mods";
+import { Biome, biomeMap, biomeList } from "./global";
 import "../../../mods/main";
 
 var modsLoadedRes: () => void;
@@ -175,7 +175,6 @@ export class ModParser {
     }
 
     #parseBiomes(o: ModInterface): Biome[] {
-        console.log(biomeMap);
         if(!Array.isArray(biomeMap[o.name])) throw new Error(
             "parser-class.ts: "
         +   `Mod "${o.name}" gave something that wasn't an array in the biome map. `

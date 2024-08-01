@@ -3,7 +3,7 @@ import { currentScene } from "../game/world/app";
 import { Octree } from "./octree";
 import { Map3D } from "./map";
 import { GreedyMesh, iterateGreedyMesh } from "./greedy-mesh";
-import { CHUNK_SIZE } from "../game/world/main";
+import { CHUNK_SIZE } from "../game/parser/global";
 import { depth, materialClearcoatNormal, outputStruct } from "three/examples/jsm/nodes/Nodes.js";
 import { UVsDebug } from "three/examples/jsm/Addons.js";
 import { BlockTextureMap } from "../game/parser/parser-class";
@@ -166,7 +166,7 @@ export class Block {
             t.scaleDepth(this.depth);
         }
 
-        this.#UVMap(geometry);
+        this.#cull(geometry, map);
         geometry.computeVertexNormals();
 
         const materials = t.getArray(t => new MeshBasicMaterial({
@@ -179,46 +179,48 @@ export class Block {
         this.mesh.geometry.computeBoundingBox();
     }
 
-    #UVMap(g: BufferGeometry): void {
+    #cull(g: BoxGeometry, map: Map3D<string>) {
+        const indices: number[] = [];
+        const positions: number[] = [];
+
         if(this.isGreedyMeshed) {
-            /*for(let x = this.#startPos.x; x <= this.#startPos.x + this.width - 1; x++) {
-                for(let y = this.#startPos.y; y <= this.#startPos.y + this.height - 1; y++) {
-                    for(let z = this.#startPos.z; z <= this.#startPos.z + this.depth - 1; z++) {
-                        const pos = new Vector3(x, y, z);
-                        this.#singularUVMap(g, pos, disableCulling);
-                    }
-                }
-            }*/
-           //this.#singularUVMap(g, this.#startPos, disableCulling);
+
         } else {
-            //this.#singularUVMap(g, this.#startPos, disableCulling);
+            this.#cullSingular(g, map, indices, positions);
         }
     }
 
-    #determineFace(type: string): [number, number] {
-        if(!this.isGreedyMeshed) return [1, 1];
-        var faceWidth = 1;
-        var faceHeight = 1;
+    #cullSingular(g: BoxGeometry, map: Map3D<string>, indices: number[], positions: number[]) {
+        for(const {dir, corners} of faces) {
+            const neighbor = map.get(
+                this.#startPos.clone()
+                .add({x: dir[0], y: dir[1], z: dir[2]})
+            );
 
-        switch (type) {
-            case "left":
-            case "right":
-                faceWidth = this.depth;
-                faceHeight = this.height;
-                break;
-            case "bottom":
-            case "top":
-                faceWidth = this.width;
-                faceHeight = this.depth;
-                break;
-            case "front":
-            case "back":
-                faceWidth = this.width;
-                faceHeight = this.height;
-                break;
+            if(!neighbor) continue;
+
+            const l = positions.length / 3;
+
+            for(const {pos} of corners) {
+                positions.push(
+                    pos[0] + this.#startPos.x,
+                    pos[1] + this.#startPos.y,
+                    pos[2] + this.#startPos.z,
+                );
+            }
+
+            indices.push(
+                l, l + 1, l + 2,
+                l + 2, l + 1, l + 3,
+            );
         }
 
-        return [faceWidth, faceHeight];
+        g.setAttribute(
+            "position",
+            new BufferAttribute(new Float32Array(positions), 3),
+        );
+
+        g.setIndex(indices);
     }
 
     addToScene(scene: Scene) {

@@ -1,5 +1,3 @@
-import {$} from "../framework/util";
-//import {errorObj} from "./error";
 import "./window";
 
 type imgPromiseArr = [string, (() => Promise<{default: string}>)];

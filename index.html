@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="assets/css/ui/main.css">
     <link rel="stylesheet" href="assets/css/ui/menu.css">
     <link rel="stylesheet" href="assets/css/ui/animations.css">
+    <link rel="stylesheet" href="assets/css/ui/controls.css">
     <script type="module" src="assets/ts/start/module-loader.ts"></script>
 </head>
 <body class="disable-select">
@@ -24,6 +25,16 @@
             </div>
             <div id="orientation"></div>
             <div id="menu"></div>
+            <div id="controls" class="no-touch-action disable-select">
+                <div id="top">
+                    <img id="arrow-forward" src="./assets/images/game/controls/arrow.png" alt="Forward arrow">
+                </div>
+                <div id="bottom">
+                    <img id="arrow-left" src="./assets/images/game/controls/arrow.png" alt="Left arrow">
+                    <img id="arrow-backwards" src="./assets/images/game/controls/arrow.png" alt="Backwards arrow">
+                    <img id="arrow-right" src="./assets/images/game/controls/arrow.png" alt="Right arrow">
+                </div>
+            </div>
         </div>
         <canvas id="c">
             Canvas not supported

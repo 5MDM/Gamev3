@@ -1,0 +1,32 @@
+
+#ui > #controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    height: auto;
+
+    margin: 30px;
+    margin-bottom: 100px;
+}
+
+#ui > #controls {
+    display: none;
+    flex-direction: column;
+}
+
+#ui > #controls > div {
+    margin: auto;
+}
+
+#ui > #controls #arrow-left {
+    rotate: -90deg;
+}
+
+#ui > #controls #arrow-right {
+    rotate: 90deg;
+}
+
+#ui > #controls #arrow-backwards {
+    rotate: 180deg;
+}

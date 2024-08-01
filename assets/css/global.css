@@ -27,3 +27,7 @@
 .isAbsolute {
     position: absolute;
 }
+
+.no-touch-action {
+    touch-action: none;
+}

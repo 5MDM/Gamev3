@@ -1,1 +1,2 @@
-import "./biomes";
+import {generate} from "./biomes";
+generate();

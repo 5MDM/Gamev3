@@ -1,2 +1,1 @@
-import "./menu/play";
-import "./menu/orientation";
+import "../../mods/main";

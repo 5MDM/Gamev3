@@ -1,14 +1,15 @@
 import { BoxGeometry, CanvasTexture, Mesh, MeshBasicMaterial, SRGBColorSpace, Scene, Vector3, DataArrayTexture, DataTexture } from "three";
 import { World } from "../../framework/world";
 import { renderLoop, setScene } from "./app";
-import { $ } from "../../framework/util";
 import "./camera";
 import { mods } from "../parser/parser";
 import { initWorldGen, setBiomesFromMods } from "../../framework/world-gen";
+import { CHUNK_SIZE } from "../parser/global";
+import "../controls";
+import { movementControlsDiv } from "../controls";
 
 // decrease for pixelation
 const IMAGE_SIZE = 32;
-export const CHUNK_SIZE = 64;
 
 const scene = new Scene();
 setScene(scene);
@@ -16,6 +17,8 @@ initWorldGen(CHUNK_SIZE);
 setBiomesFromMods(mods);
 
 export async function startGame() {
+    movementControlsDiv.style.display = "flex";
+
     const world = new World({
         CHUNK_SIZE,
         scene,
