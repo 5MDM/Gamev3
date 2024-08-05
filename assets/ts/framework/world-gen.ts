@@ -6,12 +6,14 @@ import { Map3D } from "./map";
 import { Biome, biomeList, CHUNK_SIZE } from "../game/parser/global";
 
 export interface BiomeGenFunctionOutput {
+    boxes: Box[],
     blockTypes: BlockTypesInterface;
     minY: number;
     maxY: number;
 }
 
 export abstract class BaseChunkGenerator {
+    protected boxes: Box[] = [];
     protected CHUNK_SIZE: number = CHUNK_SIZE;
     protected minY: number = 0;
     protected maxY: number = 0;
@@ -35,6 +37,14 @@ export abstract class BaseChunkGenerator {
 
         if(this.blockTypes[type] == undefined) this.blockTypes[type] = new Map3D<true>;
         this.blockTypes[type].set(pos, true);
+        this.boxes.push({
+            pos: {x: pos.x, y: pos.y, z: pos.z},
+            width: 1,
+            height: 1,
+            depth: 1,
+            isGreedyMeshed: false,
+            type,
+        });
     }
 
     init(): BiomeGenFunctionOutput {
@@ -45,6 +55,7 @@ export abstract class BaseChunkGenerator {
         this.generate();
 
         return {
+            boxes: this.boxes,
             blockTypes: this.blockTypes,
             minY: this.minY,
             maxY: this.maxY,
@@ -53,6 +64,7 @@ export abstract class BaseChunkGenerator {
 
     destroy() {
         this.blockTypes = {};
+        this.boxes = [];
     }
 
     protected abstract generate(): void;
@@ -75,7 +87,7 @@ export function getRandomElevation(pos: Vector2): number {
         return noise(pos.x * intensity, pos.y * intensity);
     }
 
-    return Math.floor(smooth(0.1) * 5) / 2 + 4;
+    return Math.floor(smooth(0.1) * 5);
 }
 
 var greedyMesh: GreedyMesh;
@@ -104,4 +116,5 @@ export function generateBlocks(chunkPos: Vector3): Box[] {
     );
 
     return greedyMesh.greedyMesh(chunkPos, e.blockTypes, e.minY, e.maxY);
+    //return e.boxes;
 }

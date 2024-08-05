@@ -34,10 +34,20 @@ export function bindMovement(o: MovementCamera) {
     down(backwards, () => o.enableMoveBackwards());
     up(backwards, () => o.disableMoveBackwards());
 
+    left.style.pointerEvents = "auto";
+    down(left, () => o.enableMoveLeft());
+    up(left, () => o.disableMoveLeft());
+
+    right.style.pointerEvents = "auto";
+    down(right, () => o.enableMoveRight());
+    up(right, () => o.disableMoveRight())
+
     addEventListener("keydown", e => {
         switch(e.key) {
             case "w": o.enableMoveForward(); break;
             case "s": o.enableMoveBackwards(); break;
+            case "a": o.enableMoveLeft(); break;
+            case "d": o.enableMoveRight(); break;
         }
     });
 
@@ -45,6 +55,8 @@ export function bindMovement(o: MovementCamera) {
         switch(e.key) {
             case "w": o.disableMoveForward(); break;
             case "s": o.disableMoveBackwards(); break;
+            case "a": o.disableMoveLeft(); break;
+            case "d": o.disableMoveRight(); break;
         }
     });
 }

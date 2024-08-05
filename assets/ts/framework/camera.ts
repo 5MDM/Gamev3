@@ -142,11 +142,16 @@ export class MovementCamera extends ControlCamera {
             const deltaTime = (now - lastUpdate) / fps60;
             lastUpdate = now;
             
-            console.log(self.moving.backwards)
             if(self.moving.forward) {
                 self.#moveForward(deltaTime);
             } else if(self.moving.backwards) {
                 self.#moveBackwards(deltaTime);
+            }
+
+            if(self.moving.right) {
+                self.#moveRight(deltaTime);
+            } else if(self.moving.left) {
+                self.#moveLeft(deltaTime);
             }
 
             requestAnimationFrame(ticker);
@@ -171,6 +176,14 @@ export class MovementCamera extends ControlCamera {
         this.threeCamera.position.sub(this.#direction);
     }
 
+    #moveLeft(delta: number): void {
+        this.threeCamera.translateX(-this.forwardSpeed * delta);
+    }
+
+    #moveRight(delta: number): void {
+        this.threeCamera.translateX(this.forwardSpeed * delta);
+    }
+
     enableMoveForward():    void {this.moving.forward = true}
     enableMoveBackwards():  void {this.moving.backwards = true}
     enableMoveLeft():       void {this.moving.left = true}
@@ -179,7 +192,9 @@ export class MovementCamera extends ControlCamera {
     enableMoveDown():       void {this.moving.down = true}
 
     disableMoveForward():   void {this.moving.forward = false}
-    disableMoveBackwards():  void {this.moving.backwards = false}
+    disableMoveBackwards(): void {this.moving.backwards = false}
+    disableMoveLeft():      void {this.moving.left = false}
+    disableMoveRight():     void {this.moving.right = false}
 }
 
 /*

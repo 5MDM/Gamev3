@@ -299,33 +299,33 @@ export class ScalableTexture {
 
     scaleWidth(m: number): void {
         this.isScaled = true;
-        this.t.bottom.repeat.x = m;
-        this.t.back.repeat.x = m;
         this.t.left.repeat.x = m;
+        this.t.right.repeat.x = m;
+        this.t.front.repeat.x = m;
         this.t.top.repeat.x = m;
     }
 
     scaleHeight(m: number): void {
         this.isScaled = true;
-        this.t.bottom.repeat.y = m;
+        this.t.left.repeat.y = m;
         this.t.back.repeat.y = m;
-        this.t.top.repeat.y = m;
         this.t.right.repeat.y = m;
+        this.t.front.repeat.y = m;
     }
 
     scaleDepth(m: number): void {
         this.isScaled = true;
         this.t.top.repeat.y = m;
-        this.t.right.repeat.x = m;
-        this.t.left.repeat.x = m;
+        this.t.bottom.repeat.y = m;
         this.t.front.repeat.x = m;
+        this.t.back.repeat.x = m;
     }
 
     getArray(f: (t: Texture) => Material): MaterialSidesArray {
         const o: {[sideName: string]: Material} = {};
         for(const t in this.t) o[t] = (f(this.t[t as BlockSideType]));
 
-        return [o.left, o.front, o.top, o.right, o.back, o.bottom] as MaterialSidesArray;
+        return [o.front, o.back, o.top, o.bottom, o.right, o.left] as MaterialSidesArray;
     }
 
     destroy(): void {
