@@ -57,6 +57,8 @@ const menu = hideable($$("div", {
     ],
 }));
 
+console.log(images);
+
 const testingText = $$("p", {
     attrs: {
         class: "full-width",

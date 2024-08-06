@@ -1,6 +1,5 @@
-import { Block, BlockType } from "./block";
-import { Map3D, Map2D } from "./map";
-import { Vector2, Vector3 } from "three";
+import { Map3D } from "./map";
+import { Vector3 } from "three";
 
 export interface BlockTypesInterface {
     [blockName: string]: Map3D<true>;

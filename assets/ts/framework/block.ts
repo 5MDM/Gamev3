@@ -1,11 +1,5 @@
-import { Object3D, BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BufferGeometry, Texture, BoxGeometry, Scene, FrontSide, MeshLambertMaterial, Material, RepeatWrapping, BoxHelper, Vector2, CanvasTexture, CubeTexture } from "three";
-import { currentScene } from "../game/world/app";
-import { Octree } from "./octree";
+import { BufferAttribute, Mesh, Vector3, MeshBasicMaterial, BoxGeometry, Scene, FrontSide } from "three";
 import { Map3D } from "./map";
-import { GreedyMesh, iterateGreedyMesh } from "./greedy-mesh";
-import { CHUNK_SIZE } from "../game/parser/global";
-import { depth, materialClearcoatNormal, outputStruct } from "three/examples/jsm/nodes/Nodes.js";
-import { UVsDebug } from "three/examples/jsm/Addons.js";
 import { BlockTextureMap } from "../game/parser/parser-class";
 
 export interface VoxelFaceArray {

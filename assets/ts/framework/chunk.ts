@@ -1,8 +1,7 @@
 import { Octree } from "./octree";
-import { CompressedTextureLoader, Group, Material, Mesh, Texture, Vector2, Vector3 } from "three";
+import { Mesh, Vector2, Vector3 } from "three";
 import { currentScene } from "../game/world/app";
-import { createNoise2D } from "simplex-noise";
-import { Block, BlockType } from "./block";
+import { Block } from "./block";
 import { Map3D } from "./map";
 import { Box, iterateGreedyMesh } from "./greedy-mesh";
 import { generateBlocks } from "./world-gen";

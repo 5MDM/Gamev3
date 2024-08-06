@@ -1,6 +1,6 @@
 import { PerspectiveCamera } from "three";
 import { setCamera } from "./app";
-import { ControlCamera, MovementCamera } from "../../framework/camera";
+import { MovementCamera } from "../../framework/camera";
 import { $, clamp } from "../../framework/util";
 import { bindMovement } from "../controls";
 

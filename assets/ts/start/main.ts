@@ -21,16 +21,16 @@ export const images: {
             );
         }
     }
+
+    await import("../../mods/main");
 })();
 
 //import "../game/main";
 
 //try {
-    await import("../game/main");
 /*} catch(err) {
     if(!(err instanceof Error)) {
         //alert(err);
-        alert(err)
         throw err;
     } else {
         //alert(err);

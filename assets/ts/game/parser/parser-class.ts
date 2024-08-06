@@ -1,6 +1,5 @@
 import { CubeRefractionMapping, Material, NearestFilter, NearestMipmapNearestFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from "three";
 import { Biome, biomeMap, biomeList } from "./global";
-import "../../../mods/main";
 
 var modsLoadedRes: () => void;
 export const modsLoadedPr = new Promise<void>(res => modsLoadedRes = res);
@@ -23,7 +22,7 @@ type BlockTextureSides = {
     back: Texture;*/
 }
 
-const mods: {[index: string]: Mod} = {};
+export const mods: {[index: string]: Mod} = {};
 
 interface InfoInterface {
     name: string;
@@ -83,32 +82,26 @@ function ld(url: string): Promise<Texture> {
 }
 
 export class ModParser {
-    modPath = import.meta.glob<globDefault>("../../../mods/**");
+    modPath = import.meta.glob<globDefault>("../../../mods/*/**");
     memoryisLoaded: boolean = false;
     memory: {[index: string]: any} = {};
     registeredMods: {[index: string]: ModInterface} = {};
 
-    loadMemory() {
-        const prArray: Promise<any>[] = [];
+    async loadMemory(): Promise<void> {
         for(const key in this.modPath) {
-            const pr = this.modPath[key]();
-            prArray.push(pr);
+            if(this.modPath[key] == undefined) throw new Error(
+                "parser-class.ts:"
+            +   `"${key}" is undefined in the mods directory`
+            );
 
-            pr.then(e => {
-                this.memory[key] = e.default;
-                
-                const extension = key.substring(key.lastIndexOf('.') + 1);
-                if(extension == "js"
-                || extension == "ts") {
-                    this.memory[key] = e;
-                }
-            });
+            const e = await (this.modPath[key]());
+            this.memory[key] = e.default;
+            
+            const extension = key.substring(key.lastIndexOf('.') + 1);
+            if(extension == "js"
+            || extension == "ts")
+                this.memory[key] = e;
         }
-
-        Promise.all(prArray)
-        .then(e => this.memoryisLoaded = true);
-
-        return prArray;
     }
 
     async #iteratePaths<T = any>(paths: PathList, f: (path: T) => void, callback: () => void) {

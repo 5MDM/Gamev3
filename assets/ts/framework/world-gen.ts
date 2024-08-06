@@ -75,6 +75,11 @@ function getRndBiome(): Biome {
 }
 
 export function setBiomesFromMods(mods: ModList) {
+    if(mods == undefined) throw new Error(
+        "world-gen.ts: "
+    +   "mods are undefined"
+    );
+
     for(const modName in mods) {
         biomeList.push(...mods[modName].biomes);
     }

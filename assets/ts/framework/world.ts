@@ -1,9 +1,8 @@
-import { Texture, Scene, AmbientLight, NearestFilter, NearestMipmapNearestFilter, Vector2, Vector3, CubeTexture } from "three";
-import {Map3D} from "./map";
-import { Octree } from "./octree";
-import {Chunk} from "./chunk";
+import { Scene, AmbientLight, Vector3 } from "three";
+import { Map3D } from "./map";
+import { Chunk } from "./chunk";
 import { initMaterial } from "./block";
-import {executeInRadius} from "./map";
+import { executeInRadius } from "./map";
 import { BlockTextureMap } from "../game/parser/parser-class";
 
 interface WorldOpts {
